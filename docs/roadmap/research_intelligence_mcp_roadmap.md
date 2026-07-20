@@ -94,23 +94,37 @@ Phase 1 is complete when:
 
 # Phase 2 — Canonical Domain Models
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Completed
 
 ## Deliverables
 
-- [ ] Provider enumeration
-- [ ] Paper identifier types
-- [ ] `Author`
-- [ ] `PaperIdentifiers`
-- [ ] `PaperAccess`
-- [ ] `Paper`
-- [ ] `PaperReference`
-- [ ] `SearchRequest`
-- [ ] `SearchResult`
-- [ ] Pagination metadata
-- [ ] Domain validation rules
-- [ ] Serialization contracts
-- [ ] Domain-model unit tests
+- [x] Shared canonical domain base model
+- [x] Provider enumeration
+- [x] Identifier type enumeration
+- [x] Access status enumeration
+- [x] Paper relationship enumeration
+- [x] Search sort enumeration
+- [x] DOI normalization and validation
+- [x] arXiv identifier normalization and validation
+- [x] `Author`
+- [x] `PaperIdentifiers`
+- [x] Preferred identifier policy
+- [x] `PaperAccess`
+- [x] `Paper`
+- [x] `PaperReference`
+- [x] `SearchRequest`
+- [x] `PaginationMetadata`
+- [x] `ProviderFailure`
+- [x] `SearchResult`
+- [x] Partial provider-failure contract
+- [x] Domain validation rules
+- [x] Immutable canonical models
+- [x] Unknown-field rejection
+- [x] JSON serialization contracts
+- [x] JSON round-trip validation
+- [x] JSON Schema generation
+- [x] Domain-model unit tests
+- [x] Ruff, Mypy, Pytest, and package build quality gates
 
 ## Architecture requirements
 
@@ -118,6 +132,31 @@ Phase 1 is complete when:
 - Canonical models must remain provider-neutral.
 - Models must use strict validation.
 - Models returned by MCP tools must have stable JSON schemas.
+
+```
+Provider response
+      │
+      ▼
+Provider-specific model
+      │
+      ▼
+Provider mapper
+      │
+      ▼
+Canonical domain model
+      │
+      ├── Paper
+      ├── Author
+      ├── PaperIdentifiers
+      ├── PaperAccess
+      └── PaperReference
+      │
+      ▼
+Service layer
+      │
+      ▼
+MCP structured output
+```
 
 ---
 
