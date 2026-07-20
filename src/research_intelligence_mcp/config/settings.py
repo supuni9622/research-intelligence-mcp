@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        populate_by_name=True,
         extra="ignore",
         frozen=True,
     )
@@ -136,47 +137,104 @@ class Settings(BaseSettings):
 
     semantic_scholar_recommendations_base_url: HttpUrl = Field(
         default=HttpUrl("https://api.semanticscholar.org/recommendations/v1"),
-        validation_alias=("SEMANTIC_SCHOLAR_RECOMMENDATIONS_BASE_URL"),
+        validation_alias="SEMANTIC_SCHOLAR_RECOMMENDATIONS_BASE_URL",
     )
 
     semantic_scholar_rate_limit_requests: int = Field(
         default=1,
         ge=1,
         le=100,
-        validation_alias=("SEMANTIC_SCHOLAR_RATE_LIMIT_REQUESTS"),
+        validation_alias="SEMANTIC_SCHOLAR_RATE_LIMIT_REQUESTS",
     )
 
     semantic_scholar_rate_limit_period_seconds: float = Field(
         default=2.0,
         gt=0,
         le=300,
-        validation_alias=("SEMANTIC_SCHOLAR_RATE_LIMIT_PERIOD_SECONDS"),
+        validation_alias="SEMANTIC_SCHOLAR_RATE_LIMIT_PERIOD_SECONDS",
     )
 
     semantic_scholar_max_retry_attempts: int = Field(
         default=3,
         ge=1,
         le=6,
-        validation_alias=("SEMANTIC_SCHOLAR_MAX_RETRY_ATTEMPTS"),
+        validation_alias="SEMANTIC_SCHOLAR_MAX_RETRY_ATTEMPTS",
     )
 
     semantic_scholar_retry_min_seconds: float = Field(
         default=2.0,
         ge=0,
         le=60,
-        validation_alias=("SEMANTIC_SCHOLAR_RETRY_MIN_SECONDS"),
+        validation_alias="SEMANTIC_SCHOLAR_RETRY_MIN_SECONDS",
     )
 
     semantic_scholar_retry_max_seconds: float = Field(
         default=20.0,
         ge=1,
         le=300,
-        validation_alias=("SEMANTIC_SCHOLAR_RETRY_MAX_SECONDS"),
+        validation_alias="SEMANTIC_SCHOLAR_RETRY_MAX_SECONDS",
     )
 
     semantic_scholar_live_tests: bool = Field(
         default=False,
         validation_alias="SEMANTIC_SCHOLAR_LIVE_TESTS",
+    )
+
+    # arXiv
+
+    arxiv_base_url: HttpUrl = Field(
+        default=HttpUrl("https://export.arxiv.org/api"),
+        validation_alias="ARXIV_BASE_URL",
+    )
+
+    arxiv_rate_limit_requests: int = Field(
+        default=1,
+        ge=1,
+        le=10,
+        validation_alias="ARXIV_RATE_LIMIT_REQUESTS",
+    )
+
+    arxiv_rate_limit_period_seconds: float = Field(
+        default=3.0,
+        ge=3.0,
+        le=300,
+        validation_alias="ARXIV_RATE_LIMIT_PERIOD_SECONDS",
+        description=(
+            "arXiv legacy APIs require no more than one request every three seconds."
+        ),
+    )
+
+    arxiv_max_retry_attempts: int = Field(
+        default=3,
+        ge=1,
+        le=6,
+        validation_alias="ARXIV_MAX_RETRY_ATTEMPTS",
+    )
+
+    arxiv_retry_min_seconds: float = Field(
+        default=3.0,
+        ge=0,
+        le=60,
+        validation_alias="ARXIV_RETRY_MIN_SECONDS",
+    )
+
+    arxiv_retry_max_seconds: float = Field(
+        default=30.0,
+        ge=1,
+        le=300,
+        validation_alias="ARXIV_RETRY_MAX_SECONDS",
+    )
+
+    arxiv_max_results_per_request: int = Field(
+        default=50,
+        ge=1,
+        le=2_000,
+        validation_alias="ARXIV_MAX_RESULTS_PER_REQUEST",
+    )
+
+    arxiv_live_tests: bool = Field(
+        default=False,
+        validation_alias="ARXIV_LIVE_TESTS",
     )
 
     @model_validator(mode="after")
@@ -192,7 +250,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_semantic_scholar_retry_range(self) -> Self:
-        """Ensure retry delay configuration forms a valid range."""
+        """Ensure Semantic Scholar retry delays form a valid range."""
 
         if (
             self.semantic_scholar_retry_min_seconds
@@ -201,6 +259,32 @@ class Settings(BaseSettings):
             raise ValueError(
                 "SEMANTIC_SCHOLAR_RETRY_MIN_SECONDS cannot exceed "
                 "SEMANTIC_SCHOLAR_RETRY_MAX_SECONDS."
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_arxiv_retry_range(self) -> Self:
+        """Ensure arXiv retry delays form a valid range."""
+
+        if self.arxiv_retry_min_seconds > self.arxiv_retry_max_seconds:
+            raise ValueError(
+                "ARXIV_RETRY_MIN_SECONDS cannot exceed ARXIV_RETRY_MAX_SECONDS."
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_arxiv_rate_limit(self) -> Self:
+        """Enforce arXiv's published legacy API request limit."""
+
+        average_interval = (
+            self.arxiv_rate_limit_period_seconds / self.arxiv_rate_limit_requests
+        )
+
+        if average_interval < 3.0:
+            raise ValueError(
+                "arXiv API configuration must allow at least three seconds per request."
             )
 
         return self

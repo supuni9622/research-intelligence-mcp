@@ -3,7 +3,7 @@
 from datetime import date
 
 import pytest
-from pydantic import ValidationError
+from pydantic import AnyHttpUrl, ValidationError
 
 from research_intelligence_mcp.domain.enums import (
     AccessStatus,
@@ -27,30 +27,30 @@ def build_test_paper() -> Paper:
             arxiv_id="1706.03762",
         ),
         title="Attention Is All You Need",
-        authors=[
+        authors=(
             Author(name="Ashish Vaswani"),
             Author(name="Noam Shazeer"),
-        ],
+        ),
         abstract="A sequence transduction architecture based on attention.",
         publication_date=date(2017, 6, 12),
         year=2017,
         venue="NeurIPS",
-        fields_of_study=[
+        fields_of_study=(
             "Computer Science",
             "Machine Learning",
-        ],
+        ),
         citation_count=100_000,
         reference_count=39,
         access=PaperAccess(
             status=AccessStatus.OPEN_ACCESS,
-            landing_page_url="https://arxiv.org/abs/1706.03762",
-            pdf_url="https://arxiv.org/pdf/1706.03762",
+            landing_page_url=AnyHttpUrl("https://arxiv.org/abs/1706.03762"),
+            pdf_url=AnyHttpUrl("https://arxiv.org/pdf/1706.03762"),
             repository=ProviderName.ARXIV,
         ),
-        sources=[
+        sources=(
             ProviderName.ARXIV,
             ProviderName.SEMANTIC_SCHOLAR,
-        ],
+        ),
     )
 
 
@@ -59,11 +59,11 @@ def test_author_name_and_affiliations_are_normalized() -> None:
 
     author = Author(
         name="  Jane   Doe  ",
-        affiliations=[
+        affiliations=(
             "Example University",
             " example university ",
             "Research Lab",
-        ],
+        ),
     )
 
     assert author.name == "Jane Doe"
@@ -116,7 +116,7 @@ def test_paper_year_must_match_publication_date() -> None:
             title="Attention Is All You Need",
             publication_date=date(2017, 6, 12),
             year=2018,
-            sources=[ProviderName.ARXIV],
+            sources=(ProviderName.ARXIV,),
         )
 
 
@@ -130,7 +130,7 @@ def test_negative_citation_count_is_rejected() -> None:
             ),
             title="Attention Is All You Need",
             citation_count=-1,
-            sources=[ProviderName.ARXIV],
+            sources=(ProviderName.ARXIV,),
         )
 
 
@@ -143,7 +143,7 @@ def test_closed_access_cannot_have_direct_pdf() -> None:
     ):
         PaperAccess(
             status=AccessStatus.CLOSED_ACCESS,
-            pdf_url="https://example.com/paper.pdf",
+            pdf_url=AnyHttpUrl("https://example.com/paper.pdf"),
         )
 
 
@@ -156,7 +156,7 @@ def test_paper_requires_a_source_provider() -> None:
                 arxiv_id="1706.03762",
             ),
             title="Attention Is All You Need",
-            sources=[],
+            sources=(),
         )
 
 
@@ -166,15 +166,15 @@ def test_paper_reference_normalizes_contexts() -> None:
     reference = PaperReference(
         relation=PaperRelationType.CITATION,
         paper=build_test_paper(),
-        contexts=[
+        contexts=(
             "Uses the Transformer architecture.",
             " Uses the Transformer architecture. ",
-        ],
-        intents=[
+        ),
+        intents=(
             "background",
             "Background",
             "methodology",
-        ],
+        ),
         is_influential=True,
     )
 
@@ -191,4 +191,4 @@ def test_domain_models_are_immutable() -> None:
     paper = build_test_paper()
 
     with pytest.raises(ValidationError):
-        paper.title = "Changed title"
+        paper.title = "Changed title"  # type: ignore[misc]

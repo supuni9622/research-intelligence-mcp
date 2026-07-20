@@ -25,7 +25,7 @@ def build_test_paper() -> Paper:
             arxiv_id="2005.11401",
         ),
         title="Retrieval-Augmented Generation",
-        sources=[ProviderName.ARXIV],
+        sources=(ProviderName.ARXIV,),
     )
 
 
@@ -51,16 +51,16 @@ def test_search_request_normalizes_query_and_filters() -> None:
 
     request = SearchRequest(
         query="  agentic    RAG  ",
-        providers=[
+        providers=(
             ProviderName.ARXIV,
             ProviderName.ARXIV,
             ProviderName.SEMANTIC_SCHOLAR,
-        ],
-        fields_of_study=[
+        ),
+        fields_of_study=(
             "Computer Science",
             " computer science ",
             "Artificial Intelligence",
-        ],
+        ),
     )
 
     assert request.query == "agentic RAG"
@@ -121,7 +121,7 @@ def test_search_result_supports_partial_provider_failure() -> None:
 
     result = SearchResult(
         query="retrieval augmented generation",
-        papers=[paper],
+        papers=(paper,),
         pagination=PaginationMetadata(
             offset=0,
             limit=10,
@@ -129,21 +129,19 @@ def test_search_result_supports_partial_provider_failure() -> None:
             total=None,
             has_more=False,
         ),
-        providers_requested=[
+        providers_requested=(
             ProviderName.SEMANTIC_SCHOLAR,
             ProviderName.ARXIV,
-        ],
-        providers_succeeded=[
-            ProviderName.ARXIV,
-        ],
-        failures=[
+        ),
+        providers_succeeded=(ProviderName.ARXIV,),
+        failures=(
             ProviderFailure(
                 provider=ProviderName.SEMANTIC_SCHOLAR,
                 code="provider_timeout",
                 message="Semantic Scholar did not respond in time.",
                 retryable=True,
-            )
-        ],
+            ),
+        ),
     )
 
     assert len(result.papers) == 1
@@ -160,7 +158,7 @@ def test_provider_cannot_be_successful_and_failed() -> None:
     ):
         SearchResult(
             query="RAG",
-            papers=[],
+            papers=(),
             pagination=PaginationMetadata(
                 offset=0,
                 limit=10,
@@ -168,15 +166,15 @@ def test_provider_cannot_be_successful_and_failed() -> None:
                 total=0,
                 has_more=False,
             ),
-            providers_requested=[ProviderName.ARXIV],
-            providers_succeeded=[ProviderName.ARXIV],
-            failures=[
+            providers_requested=(ProviderName.ARXIV,),
+            providers_succeeded=(ProviderName.ARXIV,),
+            failures=(
                 ProviderFailure(
                     provider=ProviderName.ARXIV,
                     code="unexpected_error",
                     message="Unexpected provider error.",
-                )
-            ],
+                ),
+            ),
         )
 
 
@@ -189,7 +187,7 @@ def test_pagination_returned_must_match_paper_count() -> None:
     ):
         SearchResult(
             query="RAG",
-            papers=[build_test_paper()],
+            papers=(build_test_paper(),),
             pagination=PaginationMetadata(
                 offset=0,
                 limit=10,
@@ -197,6 +195,6 @@ def test_pagination_returned_must_match_paper_count() -> None:
                 total=1,
                 has_more=True,
             ),
-            providers_requested=[ProviderName.ARXIV],
-            providers_succeeded=[ProviderName.ARXIV],
+            providers_requested=(ProviderName.ARXIV,),
+            providers_succeeded=(ProviderName.ARXIV,),
         )

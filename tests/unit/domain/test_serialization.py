@@ -2,6 +2,8 @@
 
 import json
 
+from pydantic import AnyHttpUrl
+
 from research_intelligence_mcp.domain.enums import (
     AccessStatus,
     ProviderName,
@@ -24,11 +26,11 @@ def test_paper_serializes_to_json_compatible_values() -> None:
         title="Retrieval-Augmented Generation",
         access=PaperAccess(
             status=AccessStatus.OPEN_ACCESS,
-            landing_page_url="https://arxiv.org/abs/2005.11401",
-            pdf_url="https://arxiv.org/pdf/2005.11401",
+            landing_page_url=AnyHttpUrl("https://arxiv.org/abs/2005.11401"),
+            pdf_url=AnyHttpUrl("https://arxiv.org/pdf/2005.11401"),
             repository=ProviderName.ARXIV,
         ),
-        sources=[ProviderName.ARXIV],
+        sources=(ProviderName.ARXIV,),
     )
 
     payload = paper.model_dump(mode="json")
@@ -49,12 +51,12 @@ def test_search_result_json_round_trip() -> None:
             arxiv_id="2005.11401",
         ),
         title="Retrieval-Augmented Generation",
-        sources=[ProviderName.ARXIV],
+        sources=(ProviderName.ARXIV,),
     )
 
     result = SearchResult(
         query="retrieval augmented generation",
-        papers=[paper],
+        papers=(paper,),
         pagination=PaginationMetadata(
             offset=0,
             limit=10,
@@ -62,8 +64,8 @@ def test_search_result_json_round_trip() -> None:
             total=1,
             has_more=False,
         ),
-        providers_requested=[ProviderName.ARXIV],
-        providers_succeeded=[ProviderName.ARXIV],
+        providers_requested=(ProviderName.ARXIV,),
+        providers_succeeded=(ProviderName.ARXIV,),
     )
 
     serialized = result.model_dump_json()

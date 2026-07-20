@@ -29,17 +29,13 @@ def build_settings(
 ) -> Settings:
     """Build deterministic test settings."""
 
-    values: dict[str, object] = {
-        "_env_file": None,
-        "SEMANTIC_SCHOLAR_MAX_RETRY_ATTEMPTS": (retry_attempts),
-        "SEMANTIC_SCHOLAR_RETRY_MIN_SECONDS": 0,
-        "SEMANTIC_SCHOLAR_RETRY_MAX_SECONDS": 1,
-    }
-
-    if api_key is not None:
-        values["SEMANTIC_SCHOLAR_API_KEY"] = api_key
-
-    return Settings(**values)
+    return Settings(
+        _env_file=None,
+        SEMANTIC_SCHOLAR_MAX_RETRY_ATTEMPTS=retry_attempts,
+        SEMANTIC_SCHOLAR_RETRY_MIN_SECONDS=0,
+        SEMANTIC_SCHOLAR_RETRY_MAX_SECONDS=1,
+        SEMANTIC_SCHOLAR_API_KEY=api_key,
+    )
 
 
 def build_client(

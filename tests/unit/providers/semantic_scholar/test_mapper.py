@@ -11,9 +11,7 @@ from research_intelligence_mcp.providers.semantic_scholar.models import (
     SemanticScholarPaperResponse,
 )
 
-_VALID_SEMANTIC_SCHOLAR_ID = (
-    "0796f6cd7f0403f4f5c1d1fdc9f7a3f1fdb4c5e0"
-)
+_VALID_SEMANTIC_SCHOLAR_ID = "0796f6cd7f0403f4f5c1d1fdc9f7a3f1fdb4c5e0"
 
 
 def test_maps_paper_to_canonical_model() -> None:
@@ -51,45 +49,17 @@ def test_maps_paper_to_canonical_model() -> None:
         }
     )
 
-    paper = SemanticScholarMapper.to_paper(
-        response
-    )
+    paper = SemanticScholarMapper.to_paper(response)
 
-    assert (
-        paper.title
-        == "Retrieval-Augmented Generation"
-    )
-    assert (
-        paper.identifiers.semantic_scholar_id
-        == _VALID_SEMANTIC_SCHOLAR_ID
-    )
-    assert (
-        paper.identifiers.corpus_id
-        == 123
-    )
-    assert (
-        paper.identifiers.doi
-        == "10.1000/example"
-    )
-    assert (
-        paper.identifiers.arxiv_id
-        == "2401.00001"
-    )
-    assert (
-        paper.authors[0].name
-        == "Ada Researcher"
-    )
-    assert (
-        paper.access.status
-        == AccessStatus.OPEN_ACCESS
-    )
-    assert (
-        paper.access.repository
-        == ProviderName.SEMANTIC_SCHOLAR
-    )
-    assert paper.sources == (
-        ProviderName.SEMANTIC_SCHOLAR,
-    )
+    assert paper.title == "Retrieval-Augmented Generation"
+    assert paper.identifiers.semantic_scholar_id == _VALID_SEMANTIC_SCHOLAR_ID
+    assert paper.identifiers.corpus_id == 123
+    assert paper.identifiers.doi == "10.1000/example"
+    assert paper.identifiers.arxiv_id == "2401.00001"
+    assert paper.authors[0].name == "Ada Researcher"
+    assert paper.access.status == AccessStatus.OPEN_ACCESS
+    assert paper.access.repository == ProviderName.SEMANTIC_SCHOLAR
+    assert paper.sources == (ProviderName.SEMANTIC_SCHOLAR,)
 
 
 def test_maps_string_corpus_id_to_integer() -> None:
@@ -106,14 +76,9 @@ def test_maps_string_corpus_id_to_integer() -> None:
         }
     )
 
-    paper = SemanticScholarMapper.to_paper(
-        response
-    )
+    paper = SemanticScholarMapper.to_paper(response)
 
-    assert (
-        paper.identifiers.corpus_id
-        == 456
-    )
+    assert paper.identifiers.corpus_id == 456
 
 
 def test_ignores_invalid_semantic_scholar_id_when_corpus_id_exists() -> None:
@@ -127,15 +92,7 @@ def test_ignores_invalid_semantic_scholar_id_when_corpus_id_exists() -> None:
         }
     )
 
-    paper = SemanticScholarMapper.to_paper(
-        response
-    )
+    paper = SemanticScholarMapper.to_paper(response)
 
-    assert (
-        paper.identifiers.semantic_scholar_id
-        is None
-    )
-    assert (
-        paper.identifiers.corpus_id
-        == 123
-    )
+    assert paper.identifiers.semantic_scholar_id is None
+    assert paper.identifiers.corpus_id == 123

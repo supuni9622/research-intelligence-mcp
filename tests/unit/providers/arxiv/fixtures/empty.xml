@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed
+    xmlns="http://www.w3.org/2005/Atom"
+    xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/"
+>
+    <id>https://arxiv.org/api/empty</id>
+    <title>arXiv Query Results</title>
+    <updated>2026-07-20T10:00:00Z</updated>
+
+    <opensearch:totalResults>0</opensearch:totalResults>
+    <opensearch:startIndex>0</opensearch:startIndex>
+    <opensearch:itemsPerPage>0</opensearch:itemsPerPage>
+</feed>
