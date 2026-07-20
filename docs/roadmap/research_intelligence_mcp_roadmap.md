@@ -58,7 +58,7 @@
 
 # Phase 1 — Core MCP Server
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Completed
 
 ## Deliverables
 
@@ -70,13 +70,14 @@
 - [x] CLI entry point
 - [x] Python module entry point
 - [x] Structured `health_check` tool
-- [x] MCP Inspector connection
+- [x] Application dependency container
+- [x] Explicit dependency injection
+- [x] Dependency-container tests
+- [x] MCP Inspector validation
 - [x] Tool discovery through `tools/list`
 - [x] Tool execution through `tools/call`
 - [x] Structured output-schema validation
-- [ ] Application dependency container
-- [ ] Dependency-container tests
-- [ ] Final Phase 1 quality-gate run
+- [x] Ruff, Mypy, Pytest, and package-build quality gates
 
 ## Exit criteria
 

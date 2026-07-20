@@ -1,4 +1,4 @@
-"""Run Research Intelligence MCP as a Python module."""
+"""Execute Research Intelligence MCP as a Python module."""
 
 from research_intelligence_mcp.main import main
 

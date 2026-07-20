@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from research_intelligence_mcp.config.settings import Settings
 from research_intelligence_mcp.infrastructure.logging import get_logger
+from research_intelligence_mcp.mcp.dependencies import AppDependencies
 
 logger = get_logger(__name__)
 
@@ -15,9 +16,15 @@ logger = get_logger(__name__)
 class HealthCheckResult(BaseModel):
     """Structured response returned by the health-check tool."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
-    status: Literal["healthy"] = "healthy"
+    status: Literal["healthy"] = Field(
+        default="healthy",
+        description="Current health state of the MCP server.",
+    )
 
     service: str = Field(
         description="Human-readable application name.",
@@ -45,7 +52,11 @@ class HealthCheckResult(BaseModel):
 
 
 def build_health_check_result(settings: Settings) -> HealthCheckResult:
-    """Build the health-check result independently of MCP transport."""
+    """Build a health-check result independently of MCP transport.
+
+    Keeping this logic outside the decorated MCP function makes it easy to
+    unit test without starting an MCP session.
+    """
 
     return HealthCheckResult(
         service=settings.app_name,
@@ -59,7 +70,7 @@ def build_health_check_result(settings: Settings) -> HealthCheckResult:
 
 def register_health_tools(
     server: FastMCP,
-    settings: Settings,
+    dependencies: AppDependencies,
 ) -> None:
     """Register health-related tools with the MCP server."""
 
@@ -73,11 +84,15 @@ def register_health_tools(
     async def health_check() -> HealthCheckResult:
         """Return server health and runtime metadata."""
 
-        result = build_health_check_result(settings)
+        result = build_health_check_result(
+            settings=dependencies.settings,
+        )
 
         logger.info(
             "health_check_completed",
             status=result.status,
+            server_name=result.server_name,
+            version=result.version,
             environment=result.environment,
             transport=result.transport,
         )

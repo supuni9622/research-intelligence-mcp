@@ -235,6 +235,11 @@ Tests:
 uv run pytest
 ```
 
+Package build verification: 
+```bash
+uv build
+```
+
 ---
 
 # MCP Configuration Example
@@ -292,6 +297,20 @@ Expected structured result:
 ```
 
 ![mcp inspector](image.png)
+
+
+# Startup flow
+
+```
+main()
+  │
+  ├── load settings
+  ├── configure stderr logging
+  ├── build dependency container
+  ├── create FastMCP server
+  ├── register tools
+  └── run stdio transport
+```
 
 ---
 
