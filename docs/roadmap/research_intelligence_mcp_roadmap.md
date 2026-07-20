@@ -162,57 +162,184 @@ MCP structured output
 
 # Phase 3 — Semantic Scholar Provider
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Completed
 
-## Deliverables
+## 3.1 Configuration and Infrastructure
 
-- [ ] Semantic Scholar configuration
-- [ ] Async HTTP client
-- [ ] Provider response models
-- [ ] Response-to-domain mapper
-- [ ] Provider implementation
-- [ ] API error normalization
-- [ ] Retry policy
-- [ ] Rate-limit handling
-- [ ] Mocked integration tests
-- [ ] Optional live-provider smoke tests
+### Deliverables
+
+- [x] Semantic Scholar settings
+- [x] Environment variables
+- [x] Optional API-key support
+- [x] Shared async HTTP infrastructure
+- [x] HTTP client lifecycle management
+- [x] Connection pooling
+- [x] Timeouts
+- [x] Provider-specific retry handling
+- [x] Exponential backoff with jitter
+- [x] `Retry-After` support
+- [x] Provider-aware rate limiting
+
+## 3.2 Provider Response Models
+
+### Deliverables
+
+- [x] Author response models
+- [x] Paper response models
+- [x] Search response models
+- [x] Citation response models
+- [x] Reference response models
+- [x] Recommendation response models
+- [x] Error response models
+- [x] Forward-compatible response handling
+- [x] Unknown-field ignoring
+
+## 3.3 Provider Client
+
+### Deliverables
+
+- [x] Search endpoint client
+- [x] Paper retrieval client
+- [x] Citation retrieval client
+- [x] Reference retrieval client
+- [x] Recommendations API client
+- [x] API-key header handling
+- [x] Retry handling
+- [x] Transport error handling
+- [x] Response validation
+- [x] Error normalization
+
+## 3.4 Canonical Mapping Layer
+
+### Deliverables
+
+- [x] Author mapping
+- [x] Paper mapping
+- [x] Identifier normalization
+- [x] `CorpusId` normalization
+- [x] URL normalization
+- [x] Open-access mapping
+- [x] Citation mapping
+- [x] Reference mapping
+- [x] Search-result mapping
+- [x] Provider-neutral outputs
+
+## 3.5 Provider Implementation
+
+### Deliverables
+
+- [x] Provider interface
+- [x] Search papers
+- [x] Get paper
+- [x] Get citations
+- [x] Get references
+- [x] Get recommendations
+- [x] Dependency wiring
+- [x] Composition root
+
+## 3.6 Error Handling
+
+### Deliverables
+
+- [x] `ProviderError`
+- [x] `ProviderAuthenticationError`
+- [x] `ProviderNotFoundError`
+- [x] `ProviderRateLimitError`
+- [x] `ProviderTransportError`
+- [x] `ProviderUpstreamError`
+- [x] `ProviderResponseError`
+- [x] Retry metadata support
+
+## 3.7 Testing
+
+### Deliverables
+
+- [x] Mapper tests
+- [x] Mock transport tests
+- [x] Search tests
+- [x] Authentication tests
+- [x] Rate-limit tests
+- [x] Mypy validation
+- [x] Ruff validation
+- [x] Pytest validation
 
 ## Capabilities
 
-- [ ] Search papers
-- [ ] Retrieve paper details
-- [ ] Retrieve citations
-- [ ] Retrieve references
-- [ ] Retrieve related/recommended papers
-- [ ] Resolve available open-access metadata
+- [x] Search papers
+- [x] Retrieve paper details
+- [x] Retrieve citations
+- [x] Retrieve references
+- [x] Retrieve related papers
+- [x] Resolve open-access metadata
+
+## Exit Criteria
+
+Phase 3 is complete when:
+
+- The provider layer is fully isolated.
+- Canonical models are returned everywhere.
+- Semantic Scholar API keys remain optional.
+- The full quality gate passes.
+- The provider works entirely through dependency injection.
+- No provider schemas leak outside provider boundaries.
 
 ---
 
 # Phase 4 — arXiv Provider
 
-**Status:** 🔲 Not Started
+**Status:** 🟡 Next Immediate Milestone
 
 ## Deliverables
 
-- [ ] arXiv configuration
-- [ ] Async Atom API client
-- [ ] Safe XML parsing
-- [ ] Atom response parser
-- [ ] Response-to-domain mapper
-- [ ] Provider implementation
-- [ ] API error normalization
-- [ ] Retry policy
-- [ ] Rate-limit handling
-- [ ] Mocked integration tests
-- [ ] Optional live-provider smoke tests
+### Infrastructure
 
-## Capabilities
+- [ ] arXiv settings
+- [ ] Async Atom client
+- [ ] Safe XML parsing
+- [ ] Provider-aware rate limiting
+- [ ] Retry handling
+
+### Response Models
+
+- [ ] Atom feed models
+- [ ] Entry models
+- [ ] Author models
+- [ ] Category models
+- [ ] Link models
+
+### Mapping Layer
+
+- [ ] arXiv-to-canonical mapping
+- [ ] Version normalization
+- [ ] PDF URL mapping
+- [ ] Identifier normalization
+
+### Provider Layer
 
 - [ ] Search papers
-- [ ] Retrieve arXiv metadata
-- [ ] Resolve abstract pages
+- [ ] Get paper
+- [ ] Search by author
+- [ ] Search by category
 - [ ] Resolve PDF URLs
-- [ ] Normalize arXiv identifiers and versions
+- [ ] Resolve abstract pages
+
+### Testing
+
+- [ ] XML fixture tests
+- [ ] Mapper tests
+- [ ] Provider tests
+- [ ] Optional live-provider smoke tests
+
+## Exit Criteria
+
+Phase 4 is complete when:
+
+- Atom responses are parsed safely.
+- arXiv versions are normalized consistently.
+- Provider responses map only to canonical models.
+- Search and paper retrieval work through the provider abstraction.
+- Mocked tests cover success and failure paths.
+- Ruff, Mypy, Pytest, and package build pass.
 
 ---
 
@@ -233,7 +360,7 @@ MCP structured output
 - [ ] Provider attribution
 - [ ] Search-service tests
 
-## Exit criteria
+## Exit Criteria
 
 - A single request can query one or both providers.
 - Failure from one provider does not discard successful results from another.
@@ -261,7 +388,7 @@ MCP structured output
 - [ ] MCP Inspector validation
 - [ ] Tool-level tests
 
-## Tool design requirements
+## Tool Design Requirements
 
 - Tool names must describe capabilities clearly.
 - Inputs must be bounded and validated.
@@ -273,24 +400,29 @@ MCP structured output
 
 # Phase 7 — Reliability and Infrastructure
 
-**Status:** 🔲 Not Started
+**Status:** 🟡 Partially Completed
 
-## Deliverables
+## Completed
 
-- [ ] Shared async HTTP-client lifecycle
-- [ ] Connection pooling
-- [ ] Timeouts
-- [ ] Retry policies
-- [ ] Backoff with jitter
-- [ ] Provider-aware rate limiting
+- [x] Shared async HTTP infrastructure
+- [x] Connection pooling
+- [x] Timeouts
+- [x] Retry policies
+- [x] Backoff with jitter
+- [x] Provider-aware rate limiting
+- [x] Graceful provider shutdown
+- [x] Failure normalization
+
+## Remaining
+
 - [ ] Bounded in-memory caching
 - [ ] Request correlation IDs
 - [ ] Structured provider metrics
-- [ ] Sensitive-data-safe logging
-- [ ] Graceful shutdown
-- [ ] Failure classification
+- [ ] Sensitive-data-safe logging review
+- [ ] Full application graceful shutdown verification
+- [ ] CI security scanning
 
-## Security requirements
+## Security Requirements
 
 - Use maintained libraries with a clear need.
 - Keep the dependency surface minimal.
@@ -380,12 +512,13 @@ MCP structured output
 
 ---
 
-# Current Next Action
+# Current Progress
 
-Complete the remaining Phase 1 work:
-
-1. Create the application dependency container.
-2. Pass dependencies explicitly into the server and tool registrations.
-3. Add dependency-container tests.
-4. Run the full quality gate.
-5. Mark Phase 1 complete.
+```text
+Phase 0  ████████████████████ 100%
+Phase 1  ████████████████████ 100%
+Phase 2  ████████████████████ 100%
+Phase 3  ████████████████████ 100%
+Phase 4  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 5  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 6  ░░░░░░░░░░░░░░░░░░░░   0%

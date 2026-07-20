@@ -1,32 +1,57 @@
-"""Application dependency container.
+"""Application dependency composition for the MCP server."""
 
-The container owns dependencies shared by MCP tools. Dependencies are created
-outside the tool layer and passed explicitly into tool registration functions.
-
-As the project grows, this container will own provider clients, caches,
-rate limiters, and application services.
-"""
+from __future__ import annotations
 
 from dataclasses import dataclass
 
 from research_intelligence_mcp.config.settings import Settings
+from research_intelligence_mcp.providers.semantic_scholar.create import (
+    create_semantic_scholar_provider,
+)
+from research_intelligence_mcp.providers.semantic_scholar.provider import (
+    SemanticScholarProvider,
+)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(
+    frozen=True,
+    slots=True,
+)
 class AppDependencies:
-    """Dependencies available to the MCP server and its tools."""
+    """Long-lived dependencies shared by MCP tools."""
 
     settings: Settings
+    semantic_scholar_provider: SemanticScholarProvider
+
+    async def close(self) -> None:
+        """Release managed provider resources."""
+
+        await self.semantic_scholar_provider.close()
 
 
-def build_dependencies(settings: Settings) -> AppDependencies:
-    """Build the application dependency container.
+def build_dependencies(
+    *,
+    settings: Settings,
+) -> AppDependencies:
+    """Build application dependencies.
 
-    Args:
-        settings: Validated application configuration.
-
-    Returns:
-        An immutable container holding application dependencies.
+    This function retains the existing `build_dependencies` name used by
+    the application entry point.
     """
 
-    return AppDependencies(settings=settings)
+    return AppDependencies(
+        settings=settings,
+        semantic_scholar_provider=(create_semantic_scholar_provider(settings)),
+    )
+
+
+def create_dependencies(
+    *,
+    settings: Settings,
+) -> AppDependencies:
+    """Create dependencies using the canonical composition function.
+
+    This alias supports code that prefers the `create_*` naming convention.
+    """
+
+    return build_dependencies(settings=settings)
