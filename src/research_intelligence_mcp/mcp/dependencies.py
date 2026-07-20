@@ -17,6 +17,24 @@ from research_intelligence_mcp.providers.semantic_scholar.create import (
 from research_intelligence_mcp.providers.semantic_scholar.provider import (
     SemanticScholarProvider,
 )
+from research_intelligence_mcp.services.search.aggregator import (
+    SearchResultAggregator,
+)
+from research_intelligence_mcp.services.search.deduplicator import (
+    PaperDeduplicator,
+)
+from research_intelligence_mcp.services.search.executor import (
+    ProviderExecutor,
+)
+from research_intelligence_mcp.services.search.provider_registry import (
+    ProviderRegistry,
+)
+from research_intelligence_mcp.services.search.ranker import (
+    ResultRanker,
+)
+from research_intelligence_mcp.services.search.service import (
+    FederatedSearchService,
+)
 
 
 @dataclass(
@@ -27,8 +45,11 @@ class AppDependencies:
     """Long-lived dependencies shared by MCP tools."""
 
     settings: Settings
+
     semantic_scholar_provider: SemanticScholarProvider
     arxiv_provider: ArxivProvider
+
+    federated_search_service: FederatedSearchService
 
     async def close(self) -> None:
         """Release all managed provider resources."""
@@ -62,16 +83,43 @@ def build_dependencies(
     *,
     settings: Settings,
 ) -> AppDependencies:
-    """Build application dependencies.
+    """Build application dependencies."""
 
-    This function retains the existing ``build_dependencies`` name used by
-    the application entry point.
-    """
+    semantic_scholar_provider = create_semantic_scholar_provider(settings)
+
+    arxiv_provider = create_arxiv_provider(
+        settings,
+    )
+
+    provider_registry = ProviderRegistry(
+        providers=(
+            semantic_scholar_provider,
+            arxiv_provider,
+        )
+    )
+
+    provider_executor = ProviderExecutor(
+        registry=provider_registry,
+    )
+
+    search_result_aggregator = SearchResultAggregator()
+
+    paper_deduplicator = PaperDeduplicator()
+
+    result_ranker = ResultRanker()
+
+    federated_search_service = FederatedSearchService(
+        executor=provider_executor,
+        aggregator=search_result_aggregator,
+        deduplicator=paper_deduplicator,
+        ranker=result_ranker,
+    )
 
     return AppDependencies(
         settings=settings,
-        semantic_scholar_provider=(create_semantic_scholar_provider(settings)),
-        arxiv_provider=create_arxiv_provider(settings),
+        semantic_scholar_provider=(semantic_scholar_provider),
+        arxiv_provider=arxiv_provider,
+        federated_search_service=(federated_search_service),
     )
 
 
@@ -79,9 +127,8 @@ def create_dependencies(
     *,
     settings: Settings,
 ) -> AppDependencies:
-    """Create dependencies using the canonical composition function.
+    """Create dependencies."""
 
-    This alias supports code that prefers the ``create_*`` naming convention.
-    """
-
-    return build_dependencies(settings=settings)
+    return build_dependencies(
+        settings=settings,
+    )

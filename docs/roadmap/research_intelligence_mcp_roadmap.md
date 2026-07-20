@@ -3,7 +3,7 @@
 ## Implementation Roadmap
 
 **Current version:** 0.1.0  
-**Current milestone:** Phase 1 — Core MCP Server  
+**Current milestone:** Phase 6 — Research MCP Tools  
 **Primary providers:** Semantic Scholar and arXiv
 
 ---
@@ -287,47 +287,47 @@ Phase 3 is complete when:
 
 # Phase 4 — arXiv Provider
 
-**Status:** 🟡 Next Immediate Milestone
+**Status:** ✅ Completed
 
 ## Deliverables
 
 ### Infrastructure
 
-- [ ] arXiv settings
-- [ ] Async Atom client
-- [ ] Safe XML parsing
-- [ ] Provider-aware rate limiting
-- [ ] Retry handling
+- [x] arXiv settings
+- [x] Async Atom client
+- [x] Safe XML parsing
+- [x] Provider-aware rate limiting
+- [x] Retry handling
 
 ### Response Models
 
-- [ ] Atom feed models
-- [ ] Entry models
-- [ ] Author models
-- [ ] Category models
-- [ ] Link models
+- [x] Atom feed models
+- [x] Entry models
+- [x] Author models
+- [x] Category models
+- [x] Link models
 
 ### Mapping Layer
 
-- [ ] arXiv-to-canonical mapping
-- [ ] Version normalization
-- [ ] PDF URL mapping
-- [ ] Identifier normalization
+- [x] arXiv-to-canonical mapping
+- [x] Version normalization
+- [x] PDF URL mapping
+- [x] Identifier normalization
 
 ### Provider Layer
 
-- [ ] Search papers
-- [ ] Get paper
+- [x] Search papers
+- [x] Get paper
 - [ ] Search by author
 - [ ] Search by category
-- [ ] Resolve PDF URLs
-- [ ] Resolve abstract pages
+- [x] Resolve PDF URLs
+- [x] Resolve abstract pages
 
 ### Testing
 
-- [ ] XML fixture tests
-- [ ] Mapper tests
-- [ ] Provider tests
+- [x] XML fixture tests
+- [x] Mapper tests
+- [x] Provider tests
 - [ ] Optional live-provider smoke tests
 
 ## Exit Criteria
@@ -345,20 +345,20 @@ Phase 4 is complete when:
 
 # Phase 5 — Federated Search Service
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Completed
 
 ## Deliverables
 
-- [ ] Provider registry
-- [ ] Provider selection
-- [ ] Concurrent provider execution
-- [ ] Partial-failure handling
-- [ ] Search-result aggregation
-- [ ] Identifier-based deduplication
-- [ ] Metadata-based deduplication fallback
-- [ ] Deterministic ranking
-- [ ] Provider attribution
-- [ ] Search-service tests
+- [x] Provider registry
+- [x] Provider selection
+- [x] Concurrent provider execution
+- [x] Partial-failure handling
+- [x] Search-result aggregation
+- [x] Identifier-based deduplication
+- [x] Metadata-based deduplication fallback
+- [x] Deterministic ranking
+- [x] Provider attribution
+- [x] Search-service tests
 
 ## Exit Criteria
 
@@ -519,6 +519,6 @@ Phase 0  ████████████████████ 100%
 Phase 1  ████████████████████ 100%
 Phase 2  ████████████████████ 100%
 Phase 3  ████████████████████ 100%
-Phase 4  ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 5  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 4  ████████████████████ 100%
+Phase 5  ████████████████████ 100%
 Phase 6  ░░░░░░░░░░░░░░░░░░░░   0%

@@ -6,10 +6,19 @@ from typing import Any, cast
 
 import pytest
 
-from research_intelligence_mcp.domain.enums import ProviderName, SearchSort
-from research_intelligence_mcp.domain.requests import SearchRequest
-from research_intelligence_mcp.providers.arxiv.client import ArxivClient
-from research_intelligence_mcp.providers.arxiv.provider import ArxivProvider
+from research_intelligence_mcp.domain.enums import (
+    ProviderName,
+    SearchSort,
+)
+from research_intelligence_mcp.domain.requests import (
+    SearchRequest,
+)
+from research_intelligence_mcp.providers.arxiv.client import (
+    ArxivClient,
+)
+from research_intelligence_mcp.providers.arxiv.provider import (
+    ArxivProvider,
+)
 from research_intelligence_mcp.providers.errors import (
     ProviderNotFoundError,
     ProviderRequestError,
@@ -19,8 +28,8 @@ SEARCH_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom"
       xmlns:arxiv="http://arxiv.org/schemas/atom"
       xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
-  <opensearch:totalResults>1</opensearch:totalResults>
-  <opensearch:startIndex>0</opensearch:startIndex>
+  <opensearch:totalResults>11</opensearch:totalResults>
+  <opensearch:startIndex>10</opensearch:startIndex>
   <opensearch:itemsPerPage>1</opensearch:itemsPerPage>
   <entry>
     <id>https://arxiv.org/abs/2401.12345v3</id>
@@ -59,12 +68,19 @@ class FakeArxivClient:
     """Deterministic fake client for provider unit tests."""
 
     def __init__(
-        self, *, search_xml: str = SEARCH_XML, paper_xml: str = SEARCH_XML
+        self,
+        *,
+        search_xml: str = SEARCH_XML,
+        paper_xml: str = SEARCH_XML,
     ) -> None:
+        """Initialize the fake client."""
+
         self.search_xml = search_xml
         self.paper_xml = paper_xml
+
         self.search_calls: list[dict[str, Any]] = []
         self.paper_calls: list[str] = []
+
         self.closed = False
 
     async def search(
@@ -76,6 +92,8 @@ class FakeArxivClient:
         sort_by: str | None = None,
         sort_order: str | None = None,
     ) -> str:
+        """Return the configured search response."""
+
         self.search_calls.append(
             {
                 "search_query": search_query,
@@ -85,26 +103,46 @@ class FakeArxivClient:
                 "sort_order": sort_order,
             }
         )
+
         return self.search_xml
 
-    async def get_paper(self, *, arxiv_id: str) -> str:
+    async def get_paper(
+        self,
+        *,
+        arxiv_id: str,
+    ) -> str:
+        """Return the configured paper response."""
+
         self.paper_calls.append(arxiv_id)
+
         return self.paper_xml
 
     async def close(self) -> None:
+        """Mark the fake client as closed."""
+
         self.closed = True
 
 
-def build_provider(client: FakeArxivClient) -> ArxivProvider:
+def build_provider(
+    client: FakeArxivClient,
+) -> ArxivProvider:
     """Build a provider around the typed fake client."""
 
-    return ArxivProvider(client=cast(ArxivClient, client))
+    return ArxivProvider(
+        client=cast(
+            ArxivClient,
+            client,
+        )
+    )
 
 
 @pytest.mark.asyncio
 async def test_search_papers() -> None:
+    """Search should map results and forward pagination arguments."""
+
     client = FakeArxivClient()
     provider = build_provider(client)
+
     request = SearchRequest(
         query="retrieval augmented generation",
         providers=(ProviderName.ARXIV,),
@@ -114,10 +152,31 @@ async def test_search_papers() -> None:
 
     result = await provider.search_papers(request)
 
-    assert result.papers[0].identifiers.arxiv_id == "2401.12345"
+    assert len(result.papers) == 1
+    assert (
+        result.papers[0].identifiers.arxiv_id
+        == "2401.12345"
+    )
+
+    assert result.pagination.offset == 10
+    assert result.pagination.limit == 5
+    assert result.pagination.returned == 1
+    assert result.pagination.total == 11
+    assert result.pagination.has_more is False
+
+    assert result.providers_requested == (
+        ProviderName.ARXIV,
+    )
+    assert result.providers_succeeded == (
+        ProviderName.ARXIV,
+    )
+    assert result.failures == ()
+
     assert client.search_calls == [
         {
-            "search_query": '(all:"retrieval augmented generation")',
+            "search_query": (
+                '(all:"retrieval augmented generation")'
+            ),
             "start": 10,
             "max_results": 5,
             "sort_by": "relevance",
@@ -128,12 +187,18 @@ async def test_search_papers() -> None:
 
 @pytest.mark.asyncio
 async def test_search_builds_category_and_year_filters() -> None:
+    """Search should translate category and year filters."""
+
     client = FakeArxivClient()
     provider = build_provider(client)
+
     request = SearchRequest(
         query="retrieval augmented generation",
         providers=(ProviderName.ARXIV,),
-        fields_of_study=("cs.IR", "cs.CL"),
+        fields_of_study=(
+            "cs.IR",
+            "cs.CL",
+        ),
         year_from=2022,
         year_to=2025,
     )
@@ -149,8 +214,11 @@ async def test_search_builds_category_and_year_filters() -> None:
 
 @pytest.mark.asyncio
 async def test_search_uses_publication_date_sort() -> None:
+    """Publication-date sorting should map to submittedDate."""
+
     client = FakeArxivClient()
     provider = build_provider(client)
+
     request = SearchRequest(
         query="transformers",
         providers=(ProviderName.ARXIV,),
@@ -159,63 +227,261 @@ async def test_search_uses_publication_date_sort() -> None:
 
     await provider.search_papers(request)
 
-    assert client.search_calls[0]["sort_by"] == "submittedDate"
-    assert client.search_calls[0]["sort_order"] == "descending"
+    assert (
+        client.search_calls[0]["sort_by"]
+        == "submittedDate"
+    )
+    assert (
+        client.search_calls[0]["sort_order"]
+        == "descending"
+    )
+
+
+@pytest.mark.asyncio
+async def test_search_uses_relevance_sort_by_default() -> None:
+    """Default canonical sorting should map to relevance."""
+
+    client = FakeArxivClient()
+    provider = build_provider(client)
+
+    request = SearchRequest(
+        query="transformers",
+        providers=(ProviderName.ARXIV,),
+    )
+
+    await provider.search_papers(request)
+
+    assert (
+        client.search_calls[0]["sort_by"]
+        == "relevance"
+    )
+    assert (
+        client.search_calls[0]["sort_order"]
+        == "descending"
+    )
 
 
 @pytest.mark.asyncio
 async def test_get_paper() -> None:
+    """Paper retrieval should return a canonical paper."""
+
     client = FakeArxivClient()
     provider = build_provider(client)
 
-    paper = await provider.get_paper("2401.12345v3")
+    paper = await provider.get_paper(
+        "2401.12345v3"
+    )
 
-    assert paper.identifiers.arxiv_id == "2401.12345"
-    assert client.paper_calls == ["2401.12345v3"]
+    assert (
+        paper.identifiers.arxiv_id
+        == "2401.12345"
+    )
+    assert client.paper_calls == [
+        "2401.12345v3"
+    ]
 
 
 @pytest.mark.asyncio
 async def test_get_paper_not_found() -> None:
-    provider = build_provider(FakeArxivClient(paper_xml=EMPTY_XML))
+    """An empty feed should become a not-found error."""
 
-    with pytest.raises(ProviderNotFoundError) as error_info:
-        await provider.get_paper("2401.12345")
+    provider = build_provider(
+        FakeArxivClient(
+            paper_xml=EMPTY_XML,
+        )
+    )
 
-    assert error_info.value.code == "arxiv_paper_not_found"
+    with pytest.raises(
+        ProviderNotFoundError
+    ) as error_info:
+        await provider.get_paper(
+            "2401.12345"
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_paper_not_found"
+    )
+    assert error_info.value.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_get_citations_is_not_supported() -> None:
-    provider = build_provider(FakeArxivClient())
+    """Citation retrieval should fail with a stable code."""
 
-    with pytest.raises(ProviderRequestError) as error_info:
-        await provider.get_citations("2401.12345")
+    provider = build_provider(
+        FakeArxivClient()
+    )
 
-    assert error_info.value.code == "arxiv_citations_not_supported"
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_citations(
+            "2401.12345"
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_citations_not_supported"
+    )
+    assert error_info.value.retryable is False
 
 
 @pytest.mark.asyncio
 async def test_get_references_is_not_supported() -> None:
-    provider = build_provider(FakeArxivClient())
+    """Reference retrieval should fail with a stable code."""
 
-    with pytest.raises(ProviderRequestError) as error_info:
-        await provider.get_references("2401.12345")
+    provider = build_provider(
+        FakeArxivClient()
+    )
 
-    assert error_info.value.code == "arxiv_references_not_supported"
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_references(
+            "2401.12345"
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_references_not_supported"
+    )
+    assert error_info.value.retryable is False
 
 
 @pytest.mark.asyncio
 async def test_get_related_papers_is_not_supported() -> None:
-    provider = build_provider(FakeArxivClient())
+    """Related-paper retrieval should fail with a stable code."""
 
-    with pytest.raises(ProviderRequestError) as error_info:
-        await provider.get_related_papers("2401.12345")
+    provider = build_provider(
+        FakeArxivClient()
+    )
 
-    assert error_info.value.code == "arxiv_related_papers_not_supported"
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_related_papers(
+            "2401.12345"
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_related_papers_not_supported"
+    )
+    assert error_info.value.retryable is False
+
+
+@pytest.mark.asyncio
+async def test_rejects_empty_citation_paper_id() -> None:
+    """Unsupported operations should still validate identifiers."""
+
+    provider = build_provider(
+        FakeArxivClient()
+    )
+
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_citations(" ")
+
+    assert (
+        error_info.value.code
+        == "arxiv_invalid_paper_id"
+    )
+
+
+@pytest.mark.asyncio
+async def test_rejects_invalid_reference_limit() -> None:
+    """Unsupported graph operations should validate limits."""
+
+    provider = build_provider(
+        FakeArxivClient()
+    )
+
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_references(
+            "2401.12345",
+            limit=0,
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_invalid_graph_limit"
+    )
+
+
+@pytest.mark.asyncio
+async def test_rejects_invalid_reference_offset() -> None:
+    """Unsupported graph operations should validate offsets."""
+
+    provider = build_provider(
+        FakeArxivClient()
+    )
+
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_references(
+            "2401.12345",
+            offset=-1,
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_invalid_graph_offset"
+    )
+
+
+@pytest.mark.asyncio
+async def test_rejects_invalid_related_limit() -> None:
+    """Related-paper lookup should validate result limits."""
+
+    provider = build_provider(
+        FakeArxivClient()
+    )
+
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_related_papers(
+            "2401.12345",
+            limit=0,
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_invalid_related_limit"
+    )
+
+
+@pytest.mark.asyncio
+async def test_rejects_empty_negative_paper_id() -> None:
+    """Related-paper lookup should validate negative IDs."""
+
+    provider = build_provider(
+        FakeArxivClient()
+    )
+
+    with pytest.raises(
+        ProviderRequestError
+    ) as error_info:
+        await provider.get_related_papers(
+            "2401.12345",
+            negative_paper_ids=[" "],
+        )
+
+    assert (
+        error_info.value.code
+        == "arxiv_invalid_negative_paper_id"
+    )
 
 
 @pytest.mark.asyncio
 async def test_close() -> None:
+    """Closing the provider should close its client."""
+
     client = FakeArxivClient()
     provider = build_provider(client)
 

@@ -198,11 +198,11 @@ def test_adds_warning_for_citation_count_sort() -> None:
     result = ArxivMapper.to_search_result(request=request, response=response)
 
     assert result.warnings == (
-    (
-        "arXiv does not support citation-count sorting; "
-        "results were ordered by relevance."
-    ),
-)
+        (
+            "arXiv does not support citation-count sorting; "
+            "results were ordered by relevance."
+        ),
+    )
 
 
 def test_rejects_invalid_entry_identifier() -> None:
