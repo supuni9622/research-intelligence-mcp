@@ -461,18 +461,18 @@ Phase 4 is complete when:
 
 ## Deliverables
 
-- [ ] Architecture diagram
-- [ ] Provider flow diagram
-- [ ] Tool catalogue
-- [ ] MCP Inspector instructions
-- [ ] Claude Desktop configuration
-- [ ] ChatGPT-compatible integration guidance where supported
-- [ ] Cursor configuration
-- [ ] Example tool calls and outputs
-- [ ] Development guide
-- [ ] Testing guide
-- [ ] Security considerations
-- [ ] Portfolio case study
+- [x] Architecture diagram
+- [x] Provider flow diagram
+- [x] Tool catalogue
+- [x] MCP Inspector instructions
+- [x] Claude Desktop configuration
+- [x] ChatGPT-compatible integration guidance where supported
+- [x] Cursor configuration
+- [x] Example tool calls and outputs
+- [x] Development guide
+- [x] Testing guide
+- [x] Security considerations
+- [x] Portfolio case study
 - [ ] Screenshots or demo recording
 - [ ] Changelog
 - [ ] License
@@ -481,44 +481,23 @@ Phase 4 is complete when:
 
 # Phase 9 — Continuous Integration
 
-**Status:** 🔲 Not Started
+**Status:** ✅ Completed
 
 ## Deliverables
 
-- [ ] GitHub Actions workflow
-- [ ] Ruff format check
-- [ ] Ruff lint check
-- [ ] Mypy strict check
-- [ ] Pytest
-- [ ] Build verification
-- [ ] Dependency vulnerability scanning
-- [ ] Secret scanning
-- [ ] Dependabot or equivalent dependency updates
+- [x] GitHub Actions workflow
+- [x] Ruff format check
+- [x] Ruff lint check
+- [x] Mypy strict check
+- [x] Pytest
+- [x] Build verification
+- [x] Dependency vulnerability scanning
+- [x] Secret scanning
+- [x] Dependabot dependency updates
 
 ---
 
-# Future Provider Expansion
-
-## Phase 10 — OpenAlex and Crossref
-
-**Status:** ⏸️ Deferred
-
-- [ ] OpenAlex
-- [ ] Crossref
-- [ ] DOI metadata enrichment
-- [ ] Broader citation and authorship metadata
-
-## Phase 11 — Domain-Specific Sources
-
-**Status:** ⏸️ Deferred
-
-- [ ] PubMed
-- [ ] Europe PMC
-- [ ] IEEE
-- [ ] ACM
-- [ ] Springer Nature
-
-## Phase 12 — ResearchMind Integration
+## Phase 10 — ResearchMind Integration
 
 **Status:** ⏸️ Deferred
 
@@ -529,6 +508,27 @@ Phase 4 is complete when:
 - [ ] Citation provenance
 - [ ] Observability integration
 - [ ] Evaluation scenarios
+
+# Future Provider Expansion
+
+## Phase 11 — OpenAlex and Crossref
+
+**Status:** ⏸️ Deferred
+
+- [ ] OpenAlex
+- [ ] Crossref
+- [ ] DOI metadata enrichment
+- [ ] Broader citation and authorship metadata
+
+## Phase 12 — Domain-Specific Sources
+
+**Status:** ⏸️ Deferred
+
+- [ ] PubMed
+- [ ] Europe PMC
+- [ ] IEEE
+- [ ] ACM
+- [ ] Springer Nature
 
 ---
 

@@ -1,0 +1,99 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: "3.12"
+
+      - name: Verify Python version
+        run: python --version
+
+      - name: Verify uv lockfile
+        run: uv lock --check
+
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Check formatting
+        run: uv run ruff format --check src tests
+
+      - name: Run Ruff linting
+        run: uv run ruff check src tests
+
+      - name: Run Mypy strict type checking
+        run: uv run mypy src
+
+      - name: Run tests
+        run: uv run pytest
+
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - quality
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: "3.12"
+
+      - name: Verify uv lockfile
+        run: uv lock --check
+
+      - name: Build source distribution and wheel
+        run: uv build --no-sources
+
+      - name: Verify build artifacts exist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -d dist
+          test -n "$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+
+          echo "Generated build artifacts:"
+          find dist -maxdepth 1 -type f -print
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: research-intelligence-mcp-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

@@ -1,5 +1,4 @@
 """Async-safe bounded TTL cache implementation."""
-
 from __future__ import annotations
 
 import asyncio
@@ -15,13 +14,19 @@ from research_intelligence_mcp.infrastructure.cache.base import (
 
 
 class AsyncBoundedTTLCache[KeyT, ValueT]:
-    """Async-safe TTL cache with bounded LRU eviction.
+    """Async-safe bounded in-memory cache with TTL and LRU eviction.
 
-    ``cachetools.TTLCache`` expires stale entries by TTL and evicts the least
-    recently used live entry when the configured maximum size is reached.
+    The underlying ``TTLCache`` provides:
 
-    The underlying cache is protected by an asyncio lock because cachetools
-    collections are not thread-safe.
+    - time-based expiration;
+    - bounded capacity;
+    - least-recently-used eviction.
+
+    This wrapper adds:
+
+    - asynchronous lock protection;
+    - explicit cache statistics;
+    - deterministic expiration accounting.
     """
 
     def __init__(
@@ -31,13 +36,13 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
         ttl_seconds: float,
         timer: Callable[[], float] = monotonic,
     ) -> None:
-        """Initialize a bounded TTL cache."""
-
-        if max_size < 1:
-            raise ValueError("Cache max_size must be at least one.")
+        if max_size <= 0:
+            msg = "max_size must be greater than zero"
+            raise ValueError(msg)
 
         if ttl_seconds <= 0:
-            raise ValueError("Cache ttl_seconds must be greater than zero.")
+            msg = "ttl_seconds must be greater than zero"
+            raise ValueError(msg)
 
         self._max_size = max_size
         self._ttl_seconds = ttl_seconds
@@ -58,13 +63,13 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
 
     @property
     def max_size(self) -> int:
-        """Return the maximum number of live entries."""
+        """Return the configured maximum number of cache entries."""
 
         return self._max_size
 
     @property
     def ttl_seconds(self) -> float:
-        """Return the configured entry TTL."""
+        """Return the configured cache TTL in seconds."""
 
         return self._ttl_seconds
 
@@ -72,7 +77,7 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
         self,
         key: KeyT,
     ) -> CacheLookup[ValueT]:
-        """Retrieve a live cached value."""
+        """Return a cached value when present and not expired."""
 
         async with self._lock:
             self._expire_locked()
@@ -81,7 +86,6 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
                 value = self._cache[key]
             except KeyError:
                 self._misses += 1
-
                 return CacheLookup(
                     found=False,
                     value=None,
@@ -99,15 +103,19 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
         key: KeyT,
         value: ValueT,
     ) -> None:
-        """Store a value and evict the least recently used entry if needed."""
+        """Store a value in the cache.
+
+        Expired entries are removed before determining whether insertion will
+        require an LRU eviction.
+        """
 
         async with self._lock:
             self._expire_locked()
 
-            key_already_exists = key in self._cache
+            is_existing_key = key in self._cache
             cache_is_full = len(self._cache) >= self._max_size
 
-            if not key_already_exists and cache_is_full:
+            if not is_existing_key and cache_is_full:
                 self._evictions += 1
 
             self._cache[key] = value
@@ -117,7 +125,10 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
         self,
         key: KeyT,
     ) -> bool:
-        """Delete one cached entry."""
+        """Delete a cache entry.
+
+        Returns ``True`` when an active entry existed and was removed.
+        """
 
         async with self._lock:
             self._expire_locked()
@@ -130,13 +141,13 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
             return True
 
     async def clear(self) -> None:
-        """Remove all entries without resetting lifetime statistics."""
+        """Remove all cached entries without resetting accumulated metrics."""
 
         async with self._lock:
             self._cache.clear()
 
     async def stats(self) -> CacheStats:
-        """Return a consistent cache statistics snapshot."""
+        """Return a snapshot of cache statistics."""
 
         async with self._lock:
             self._expire_locked()
@@ -152,12 +163,18 @@ class AsyncBoundedTTLCache[KeyT, ValueT]:
             )
 
     def _expire_locked(self) -> None:
-        """Expire stale entries while the caller holds the cache lock."""
+        """Remove expired entries and update expiration statistics.
 
-        size_before = len(self._cache)
+        This method must only be called while ``self._lock`` is held.
 
-        self._cache.expire()
+        ``TTLCache.expire()`` returns the expired key-value pairs. Counting
+        those returned entries ensures expirations are not silently removed
+        without being reflected in cache statistics.
+        """
 
-        size_after = len(self._cache)
+        expired_count = sum(
+            1
+            for _ in self._cache.expire()
+        )
 
-        self._expirations += size_before - size_after
+        self._expirations += expired_count
