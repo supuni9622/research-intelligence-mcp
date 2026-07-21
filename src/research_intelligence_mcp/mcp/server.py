@@ -8,6 +8,9 @@ from research_intelligence_mcp.mcp.dependencies import (
 from research_intelligence_mcp.mcp.tools.health import (
     register_health_tools,
 )
+from research_intelligence_mcp.mcp.tools.paper import (
+    register_paper_tools,
+)
 from research_intelligence_mcp.mcp.tools.search import (
     register_search_tools,
 )
@@ -53,6 +56,10 @@ def create_mcp_server(
     register_search_tools(
         server=server,
         dependencies=dependencies,
+    )
+    register_paper_tools(
+    server=server,
+    dependencies=dependencies,
     )
 
     return server
