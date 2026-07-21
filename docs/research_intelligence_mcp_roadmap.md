@@ -423,10 +423,19 @@ Phase 4 is complete when:
 - [x] Provider-aware rate limiting
 - [x] Graceful provider shutdown
 - [x] Failure normalization
+- [x] Bounded in-memory caching
+- [x] Separate search and paper caches
+- [x] TTL-based expiration
+- [x] LRU eviction
+- [x] Async-safe cache access
+- [x] Deterministic cache keys
+- [x] Cache hit, miss, write, eviction, and expiration statistics
+- [x] Successful-response-only caching
+- [x] Cache dependency injection and shutdown cleanup
+- [x] Cache unit and integration tests
 
 ## Remaining
 
-- [ ] Bounded in-memory caching
 - [ ] Request correlation IDs
 - [ ] Structured provider metrics
 - [ ] Sensitive-data-safe logging review
@@ -533,7 +542,7 @@ Phase 3  ████████████████████ 100%
 Phase 4  ████████████████████ 100%
 Phase 5  ████████████████████ 100%
 Phase 6  ████████████████░░░░  75%
-Phase 7  ███░░░░░░░░░░░░░░░░░  15%
+Phase 7  ██████░░░░░░░░░░░░░░  30%
 Phase 8  ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
 ```
@@ -555,6 +564,16 @@ Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
 - `get_paper_references` is implemented.
 - `get_related_papers` is implemented.
 
+- Bounded in-memory caching is implemented and validated.
+- Search and paper caches use independent TTL and capacity settings.
+- Cache access is async-safe.
+- Deterministic cache keys are implemented.
+- Cache statistics track hits, misses, writes, evictions, and expirations.
+- Provider failures and exceptions are not cached.
+- Cache dependencies are wired through the application dependency container.
+- Cache cleanup is included in application shutdown handling.
+- Ruff and Mypy validation pass for the caching implementation.
+
 Current limitations:
 
 - Citation/reference/recommendation tools are only supported by Semantic Scholar.
@@ -565,10 +584,10 @@ Current limitations:
 The next implementation milestone is:
 
 1. Reliability and Infrastructure
-   - bounded caching
    - request correlation IDs
    - structured metrics
    - logging review
+   - full application graceful shutdown verification
 
 2. Continuous Integration
    - GitHub Actions
@@ -582,10 +601,10 @@ Phase 7 — Reliability and Infrastructure
 
 Priority order:
 
-1. Bounded in-memory caching
-2. Request correlation IDs
-3. Structured provider metrics
-4. Logging review
+1. Request correlation IDs
+2. Structured provider metrics
+3. Logging review
+4. Full application graceful shutdown verification
 5. CI and security scanning
 
 Deferred items:
