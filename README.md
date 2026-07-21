@@ -312,6 +312,11 @@ main()
   └── run stdio transport
 ```
 
+# MCP Tools
+
+## Search Tool
+![search mcp tool](image-1.png)
+![search-mcp-output](image-2.png)
 ---
 
 # License

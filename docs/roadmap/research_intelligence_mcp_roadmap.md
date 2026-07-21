@@ -371,22 +371,31 @@ Phase 4 is complete when:
 
 # Phase 6 — Research MCP Tools
 
-**Status:** 🔲 Not Started
+**Status:** 🟡 In Progress
 
 ## Deliverables
 
-- [ ] `search_papers`
+- [x] `search_papers`
 - [ ] `search_arxiv`
 - [ ] `get_paper`
 - [ ] `get_related_papers`
 - [ ] `get_paper_citations`
 - [ ] `get_paper_references`
 - [ ] `resolve_paper_access`
-- [ ] Stable tool descriptions
-- [ ] Validated input models
-- [ ] Structured output models
-- [ ] MCP Inspector validation
-- [ ] Tool-level tests
+- [x] Stable tool description for `search_papers`
+- [x] Validated input model for `search_papers`
+- [x] Structured provider-neutral output for `search_papers`
+- [x] MCP Inspector validation for `search_papers`
+- [x] Tool-level tests for `search_papers`
+- [x] Server registration and tool discovery validation
+- [x] Federated partial-failure output exposed through MCP
+- [ ] Provider-aware field-of-study translation
+- [ ] Unsupported field-filter warnings
+- [ ] Remaining tool descriptions
+- [ ] Remaining validated input models
+- [ ] Remaining structured output models
+- [ ] Remaining MCP Inspector validation
+- [ ] Remaining tool-level tests
 
 ## Tool Design Requirements
 
@@ -395,6 +404,8 @@ Phase 4 is complete when:
 - Outputs must be provider-neutral.
 - Errors must be safe and actionable.
 - Tools must not perform LLM reasoning or report generation.
+- Canonical field filters must be translated into provider-specific query formats.
+- Unsupported provider filters must be ignored safely and returned as actionable warnings.
 
 ---
 
@@ -521,4 +532,19 @@ Phase 2  ████████████████████ 100%
 Phase 3  ████████████████████ 100%
 Phase 4  ████████████████████ 100%
 Phase 5  ████████████████████ 100%
-Phase 6  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 6  ████████░░░░░░░░░░░░  40%
+
+---
+
+# Latest Validation
+
+- `search_papers` is registered and discoverable through MCP Inspector.
+- Structured input validation is working.
+- Structured provider-neutral output is working.
+- arXiv search returns canonical paper records successfully.
+- Semantic Scholar rate-limit failures are normalized as retryable partial failures.
+- A successful provider result is preserved when another provider fails.
+- Field-of-study filtering requires provider-aware translation:
+  - Semantic Scholar accepts broad fields such as `Computer Science`.
+  - arXiv expects category identifiers such as `cs.CL`, `cs.IR`, and `cs.AI`.
+- The next implementation task is provider-aware field-filter translation and warning generation before continuing with the remaining MCP tools.

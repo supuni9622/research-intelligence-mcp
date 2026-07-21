@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from research_intelligence_mcp.config.settings import Settings
+from research_intelligence_mcp.config.settings import (
+    Settings,
+)
 from research_intelligence_mcp.providers.arxiv.create import (
     create_arxiv_provider,
 )
@@ -49,6 +51,12 @@ class AppDependencies:
     semantic_scholar_provider: SemanticScholarProvider
     arxiv_provider: ArxivProvider
 
+    provider_registry: ProviderRegistry
+    provider_executor: ProviderExecutor
+    search_result_aggregator: SearchResultAggregator
+    paper_deduplicator: PaperDeduplicator
+    result_ranker: ResultRanker
+
     federated_search_service: FederatedSearchService
 
     async def close(self) -> None:
@@ -83,13 +91,11 @@ def build_dependencies(
     *,
     settings: Settings,
 ) -> AppDependencies:
-    """Build application dependencies."""
+    """Build the complete application dependency graph."""
 
     semantic_scholar_provider = create_semantic_scholar_provider(settings)
 
-    arxiv_provider = create_arxiv_provider(
-        settings,
-    )
+    arxiv_provider = create_arxiv_provider(settings)
 
     provider_registry = ProviderRegistry(
         providers=(
@@ -119,6 +125,11 @@ def build_dependencies(
         settings=settings,
         semantic_scholar_provider=(semantic_scholar_provider),
         arxiv_provider=arxiv_provider,
+        provider_registry=provider_registry,
+        provider_executor=provider_executor,
+        search_result_aggregator=(search_result_aggregator),
+        paper_deduplicator=paper_deduplicator,
+        result_ranker=result_ranker,
         federated_search_service=(federated_search_service),
     )
 
@@ -127,8 +138,6 @@ def create_dependencies(
     *,
     settings: Settings,
 ) -> AppDependencies:
-    """Create dependencies."""
+    """Create dependencies using the canonical composition function."""
 
-    return build_dependencies(
-        settings=settings,
-    )
+    return build_dependencies(settings=settings)

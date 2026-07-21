@@ -153,10 +153,7 @@ async def test_search_papers() -> None:
     result = await provider.search_papers(request)
 
     assert len(result.papers) == 1
-    assert (
-        result.papers[0].identifiers.arxiv_id
-        == "2401.12345"
-    )
+    assert result.papers[0].identifiers.arxiv_id == "2401.12345"
 
     assert result.pagination.offset == 10
     assert result.pagination.limit == 5
@@ -164,19 +161,13 @@ async def test_search_papers() -> None:
     assert result.pagination.total == 11
     assert result.pagination.has_more is False
 
-    assert result.providers_requested == (
-        ProviderName.ARXIV,
-    )
-    assert result.providers_succeeded == (
-        ProviderName.ARXIV,
-    )
+    assert result.providers_requested == (ProviderName.ARXIV,)
+    assert result.providers_succeeded == (ProviderName.ARXIV,)
     assert result.failures == ()
 
     assert client.search_calls == [
         {
-            "search_query": (
-                '(all:"retrieval augmented generation")'
-            ),
+            "search_query": ('(all:"retrieval augmented generation")'),
             "start": 10,
             "max_results": 5,
             "sort_by": "relevance",
@@ -227,14 +218,8 @@ async def test_search_uses_publication_date_sort() -> None:
 
     await provider.search_papers(request)
 
-    assert (
-        client.search_calls[0]["sort_by"]
-        == "submittedDate"
-    )
-    assert (
-        client.search_calls[0]["sort_order"]
-        == "descending"
-    )
+    assert client.search_calls[0]["sort_by"] == "submittedDate"
+    assert client.search_calls[0]["sort_order"] == "descending"
 
 
 @pytest.mark.asyncio
@@ -251,14 +236,8 @@ async def test_search_uses_relevance_sort_by_default() -> None:
 
     await provider.search_papers(request)
 
-    assert (
-        client.search_calls[0]["sort_by"]
-        == "relevance"
-    )
-    assert (
-        client.search_calls[0]["sort_order"]
-        == "descending"
-    )
+    assert client.search_calls[0]["sort_by"] == "relevance"
+    assert client.search_calls[0]["sort_order"] == "descending"
 
 
 @pytest.mark.asyncio
@@ -268,17 +247,10 @@ async def test_get_paper() -> None:
     client = FakeArxivClient()
     provider = build_provider(client)
 
-    paper = await provider.get_paper(
-        "2401.12345v3"
-    )
+    paper = await provider.get_paper("2401.12345v3")
 
-    assert (
-        paper.identifiers.arxiv_id
-        == "2401.12345"
-    )
-    assert client.paper_calls == [
-        "2401.12345v3"
-    ]
+    assert paper.identifiers.arxiv_id == "2401.12345"
+    assert client.paper_calls == ["2401.12345v3"]
 
 
 @pytest.mark.asyncio
@@ -291,17 +263,10 @@ async def test_get_paper_not_found() -> None:
         )
     )
 
-    with pytest.raises(
-        ProviderNotFoundError
-    ) as error_info:
-        await provider.get_paper(
-            "2401.12345"
-        )
+    with pytest.raises(ProviderNotFoundError) as error_info:
+        await provider.get_paper("2401.12345")
 
-    assert (
-        error_info.value.code
-        == "arxiv_paper_not_found"
-    )
+    assert error_info.value.code == "arxiv_paper_not_found"
     assert error_info.value.status_code == 404
 
 
@@ -309,21 +274,12 @@ async def test_get_paper_not_found() -> None:
 async def test_get_citations_is_not_supported() -> None:
     """Citation retrieval should fail with a stable code."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
-        await provider.get_citations(
-            "2401.12345"
-        )
+    with pytest.raises(ProviderRequestError) as error_info:
+        await provider.get_citations("2401.12345")
 
-    assert (
-        error_info.value.code
-        == "arxiv_citations_not_supported"
-    )
+    assert error_info.value.code == "arxiv_citations_not_supported"
     assert error_info.value.retryable is False
 
 
@@ -331,21 +287,12 @@ async def test_get_citations_is_not_supported() -> None:
 async def test_get_references_is_not_supported() -> None:
     """Reference retrieval should fail with a stable code."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
-        await provider.get_references(
-            "2401.12345"
-        )
+    with pytest.raises(ProviderRequestError) as error_info:
+        await provider.get_references("2401.12345")
 
-    assert (
-        error_info.value.code
-        == "arxiv_references_not_supported"
-    )
+    assert error_info.value.code == "arxiv_references_not_supported"
     assert error_info.value.retryable is False
 
 
@@ -353,21 +300,12 @@ async def test_get_references_is_not_supported() -> None:
 async def test_get_related_papers_is_not_supported() -> None:
     """Related-paper retrieval should fail with a stable code."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
-        await provider.get_related_papers(
-            "2401.12345"
-        )
+    with pytest.raises(ProviderRequestError) as error_info:
+        await provider.get_related_papers("2401.12345")
 
-    assert (
-        error_info.value.code
-        == "arxiv_related_papers_not_supported"
-    )
+    assert error_info.value.code == "arxiv_related_papers_not_supported"
     assert error_info.value.retryable is False
 
 
@@ -375,107 +313,72 @@ async def test_get_related_papers_is_not_supported() -> None:
 async def test_rejects_empty_citation_paper_id() -> None:
     """Unsupported operations should still validate identifiers."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
+    with pytest.raises(ProviderRequestError) as error_info:
         await provider.get_citations(" ")
 
-    assert (
-        error_info.value.code
-        == "arxiv_invalid_paper_id"
-    )
+    assert error_info.value.code == "arxiv_invalid_paper_id"
 
 
 @pytest.mark.asyncio
 async def test_rejects_invalid_reference_limit() -> None:
     """Unsupported graph operations should validate limits."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
+    with pytest.raises(ProviderRequestError) as error_info:
         await provider.get_references(
             "2401.12345",
             limit=0,
         )
 
-    assert (
-        error_info.value.code
-        == "arxiv_invalid_graph_limit"
-    )
+    assert error_info.value.code == "arxiv_invalid_graph_limit"
 
 
 @pytest.mark.asyncio
 async def test_rejects_invalid_reference_offset() -> None:
     """Unsupported graph operations should validate offsets."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
+    with pytest.raises(ProviderRequestError) as error_info:
         await provider.get_references(
             "2401.12345",
             offset=-1,
         )
 
-    assert (
-        error_info.value.code
-        == "arxiv_invalid_graph_offset"
-    )
+    assert error_info.value.code == "arxiv_invalid_graph_offset"
 
 
 @pytest.mark.asyncio
 async def test_rejects_invalid_related_limit() -> None:
     """Related-paper lookup should validate result limits."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
+    with pytest.raises(ProviderRequestError) as error_info:
         await provider.get_related_papers(
             "2401.12345",
             limit=0,
         )
 
-    assert (
-        error_info.value.code
-        == "arxiv_invalid_related_limit"
-    )
+    assert error_info.value.code == "arxiv_invalid_related_limit"
 
 
 @pytest.mark.asyncio
 async def test_rejects_empty_negative_paper_id() -> None:
     """Related-paper lookup should validate negative IDs."""
 
-    provider = build_provider(
-        FakeArxivClient()
-    )
+    provider = build_provider(FakeArxivClient())
 
-    with pytest.raises(
-        ProviderRequestError
-    ) as error_info:
+    with pytest.raises(ProviderRequestError) as error_info:
         await provider.get_related_papers(
             "2401.12345",
             negative_paper_ids=[" "],
         )
 
-    assert (
-        error_info.value.code
-        == "arxiv_invalid_negative_paper_id"
-    )
+    assert error_info.value.code == "arxiv_invalid_negative_paper_id"
 
 
 @pytest.mark.asyncio
