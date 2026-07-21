@@ -26,8 +26,9 @@ def create_mcp_server(
             Long-lived application dependencies shared by registered tools.
 
     Returns:
-        A fully configured FastMCP server with health and academic research
-        discovery capabilities.
+        A fully configured FastMCP server with academic paper discovery,
+        metadata retrieval, citation graph, reference graph, recommendation,
+        and access-resolution capabilities.
     """
 
     settings = dependencies.settings
@@ -39,9 +40,18 @@ def create_mcp_server(
             "research tools backed by Semantic Scholar and arXiv. "
             "Use search_papers to discover academic literature by topic, "
             "keywords, title, author, publication year, or academic field. "
-            "The search tool can query one or both providers, merges duplicate "
-            "papers, preserves source provenance, and reports partial provider "
-            "failures without discarding successful results. "
+            "Use get_paper to retrieve canonical metadata for one paper. "
+            "Use get_paper_citations to find papers that cite an origin paper. "
+            "Use get_paper_references to retrieve papers referenced by an "
+            "origin paper. "
+            "Use get_related_papers to discover recommendations related to a "
+            "seed paper. "
+            "Use resolve_paper_access to determine known access status, "
+            "landing-page URLs, PDF URLs, licenses, and repository metadata. "
+            "Semantic Scholar supports citation graphs, reference graphs, and "
+            "related-paper recommendations. arXiv supports search, individual "
+            "paper metadata, and open-access metadata, but does not expose "
+            "citation, reference, or recommendation APIs. "
             "Use health_check only to verify server availability. "
             "The server retrieves structured research metadata; it does not "
             "perform autonomous research synthesis or generate reports."
@@ -57,9 +67,10 @@ def create_mcp_server(
         server=server,
         dependencies=dependencies,
     )
+
     register_paper_tools(
-    server=server,
-    dependencies=dependencies,
+        server=server,
+        dependencies=dependencies,
     )
 
     return server

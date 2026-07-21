@@ -70,7 +70,7 @@ def build_server_dependencies() -> AppDependencies:
 
 @pytest.mark.asyncio
 async def test_server_registers_expected_tools() -> None:
-    """The server should expose health, search, and paper tools."""
+    """The server should expose all implemented MCP tools."""
 
     server = create_mcp_server(
         build_server_dependencies()
@@ -83,9 +83,15 @@ async def test_server_registers_expected_tools() -> None:
         for tool in tools
     }
 
-    assert "health_check" in tool_names
-    assert "search_papers" in tool_names
-    assert "get_paper" in tool_names
+    assert tool_names == {
+        "health_check",
+        "search_papers",
+        "get_paper",
+        "get_paper_citations",
+        "get_paper_references",
+        "get_related_papers",
+        "resolve_paper_access",
+    }
 
 
 @pytest.mark.asyncio
@@ -127,7 +133,7 @@ async def test_search_papers_has_input_and_output_schemas() -> None:
 
 @pytest.mark.asyncio
 async def test_get_paper_has_input_and_output_schemas() -> None:
-    """The paper tool should expose structured protocol schemas."""
+    """The get-paper tool should expose structured protocol schemas."""
 
     server = create_mcp_server(
         build_server_dependencies()
@@ -163,3 +169,140 @@ async def test_get_paper_has_input_and_output_schemas() -> None:
     assert "paper_id" in required_fields
 
     assert paper_tool.outputSchema is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "tool_name",
+    [
+        "get_paper_citations",
+        "get_paper_references",
+    ],
+)
+async def test_paper_graph_tools_have_structured_schemas(
+    tool_name: str,
+) -> None:
+    """Citation and reference tools should expose graph input schemas."""
+
+    server = create_mcp_server(
+        build_server_dependencies()
+    )
+
+    tools = await server.list_tools()
+
+    graph_tool = next(
+        tool
+        for tool in tools
+        if tool.name == tool_name
+    )
+
+    assert graph_tool.description is not None
+    assert "Semantic Scholar" in graph_tool.description
+    assert "arXiv" in graph_tool.description
+
+    assert graph_tool.inputSchema["type"] == "object"
+
+    properties = graph_tool.inputSchema["properties"]
+
+    assert "provider" in properties
+    assert "paper_id" in properties
+    assert "limit" in properties
+    assert "offset" in properties
+
+    required_fields = set(
+        graph_tool.inputSchema.get(
+            "required",
+            [],
+        )
+    )
+
+    assert "provider" in required_fields
+    assert "paper_id" in required_fields
+    assert "limit" not in required_fields
+    assert "offset" not in required_fields
+
+    assert graph_tool.outputSchema is not None
+
+
+@pytest.mark.asyncio
+async def test_get_related_papers_has_structured_schema() -> None:
+    """The related-paper tool should expose recommendation inputs."""
+
+    server = create_mcp_server(
+        build_server_dependencies()
+    )
+
+    tools = await server.list_tools()
+
+    related_tool = next(
+        tool
+        for tool in tools
+        if tool.name == "get_related_papers"
+    )
+
+    assert related_tool.description is not None
+    assert "recommendation" in related_tool.description
+    assert "Semantic Scholar" in related_tool.description
+
+    assert related_tool.inputSchema["type"] == "object"
+
+    properties = related_tool.inputSchema["properties"]
+
+    assert "provider" in properties
+    assert "paper_id" in properties
+    assert "limit" in properties
+    assert "negative_paper_ids" in properties
+
+    required_fields = set(
+        related_tool.inputSchema.get(
+            "required",
+            [],
+        )
+    )
+
+    assert "provider" in required_fields
+    assert "paper_id" in required_fields
+    assert "limit" not in required_fields
+    assert "negative_paper_ids" not in required_fields
+
+    assert related_tool.outputSchema is not None
+
+
+@pytest.mark.asyncio
+async def test_resolve_paper_access_has_structured_schema() -> None:
+    """The access tool should expose paper resolution inputs."""
+
+    server = create_mcp_server(
+        build_server_dependencies()
+    )
+
+    tools = await server.list_tools()
+
+    access_tool = next(
+        tool
+        for tool in tools
+        if tool.name == "resolve_paper_access"
+    )
+
+    assert access_tool.description is not None
+    assert "access" in access_tool.description
+    assert "PDF" in access_tool.description
+
+    assert access_tool.inputSchema["type"] == "object"
+
+    properties = access_tool.inputSchema["properties"]
+
+    assert "provider" in properties
+    assert "paper_id" in properties
+
+    required_fields = set(
+        access_tool.inputSchema.get(
+            "required",
+            [],
+        )
+    )
+
+    assert "provider" in required_fields
+    assert "paper_id" in required_fields
+
+    assert access_tool.outputSchema is not None

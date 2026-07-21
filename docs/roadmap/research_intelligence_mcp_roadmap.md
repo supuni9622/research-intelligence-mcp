@@ -376,12 +376,12 @@ Phase 4 is complete when:
 ## Deliverables
 
 - [x] `search_papers`
-- [ ] `search_arxiv`
-- [ ] `get_paper`
-- [ ] `get_related_papers`
-- [ ] `get_paper_citations`
-- [ ] `get_paper_references`
-- [ ] `resolve_paper_access`
+- [x] `search_arxiv`
+- [x] `get_paper`
+- [x] `get_related_papers` - but need to fix some issues
+- [x] `get_paper_citations` - but need to fix some issues
+- [x] `get_paper_references` - but need to fix some issues
+- [x] `resolve_paper_access`
 - [x] Stable tool description for `search_papers`
 - [x] Validated input model for `search_papers`
 - [x] Structured provider-neutral output for `search_papers`
@@ -391,11 +391,11 @@ Phase 4 is complete when:
 - [x] Federated partial-failure output exposed through MCP
 - [ ] Provider-aware field-of-study translation
 - [ ] Unsupported field-filter warnings
-- [ ] Remaining tool descriptions
-- [ ] Remaining validated input models
-- [ ] Remaining structured output models
-- [ ] Remaining MCP Inspector validation
-- [ ] Remaining tool-level tests
+- [x] Remaining tool descriptions
+- [x] Remaining validated input models
+- [x] Remaining structured output models
+- [x] Remaining MCP Inspector validation
+- [x] Remaining tool-level tests
 
 ## Tool Design Requirements
 
@@ -532,8 +532,11 @@ Phase 2  ████████████████████ 100%
 Phase 3  ████████████████████ 100%
 Phase 4  ████████████████████ 100%
 Phase 5  ████████████████████ 100%
-Phase 6  ████████░░░░░░░░░░░░  40%
-
+Phase 6  ████████████████░░░░  75%
+Phase 7  ███░░░░░░░░░░░░░░░░░  15%
+Phase 8  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
+```
 ---
 
 # Latest Validation
@@ -544,7 +547,49 @@ Phase 6  ████████░░░░░░░░░░░░  40%
 - arXiv search returns canonical paper records successfully.
 - Semantic Scholar rate-limit failures are normalized as retryable partial failures.
 - A successful provider result is preserved when another provider fails.
-- Field-of-study filtering requires provider-aware translation:
-  - Semantic Scholar accepts broad fields such as `Computer Science`.
-  - arXiv expects category identifiers such as `cs.CL`, `cs.IR`, and `cs.AI`.
-- The next implementation task is provider-aware field-filter translation and warning generation before continuing with the remaining MCP tools.
+
+- `get_paper` is implemented and validated through MCP Inspector.
+- `resolve_paper_access` is implemented and validated.
+
+- `get_paper_citations` is implemented.
+- `get_paper_references` is implemented.
+- `get_related_papers` is implemented.
+
+Current limitations:
+
+- Citation/reference/recommendation tools are only supported by Semantic Scholar.
+- arXiv correctly returns normalized unsupported-operation errors.
+- Semantic Scholar graph endpoints require additional response-model validation and payload normalization.
+- Provider-aware field-of-study translation remains deferred.
+
+The next implementation milestone is:
+
+1. Reliability and Infrastructure
+   - bounded caching
+   - request correlation IDs
+   - structured metrics
+   - logging review
+
+2. Continuous Integration
+   - GitHub Actions
+   - dependency scanning
+   - secret scanning
+   - automated quality gates
+
+# Immediate Next Milestone
+
+Phase 7 — Reliability and Infrastructure
+
+Priority order:
+
+1. Bounded in-memory caching
+2. Request correlation IDs
+3. Structured provider metrics
+4. Logging review
+5. CI and security scanning
+
+Deferred items:
+
+- Provider-aware field translation
+- Citation/reference payload normalization improvements
+- Additional provider integrations
