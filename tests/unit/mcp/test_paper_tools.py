@@ -50,16 +50,12 @@ def build_paper(
         title=title,
         access=PaperAccess(
             status=AccessStatus.OPEN_ACCESS,
-            landing_page_url=(
-                f"https://www.semanticscholar.org/paper/{paper_id}"
-            ),
+            landing_page_url=(f"https://www.semanticscholar.org/paper/{paper_id}"),
             pdf_url=f"https://example.org/{paper_id}.pdf",
             license="CC BY 4.0",
             repository=ProviderName.SEMANTIC_SCHOLAR,
         ),
-        sources=(
-            ProviderName.SEMANTIC_SCHOLAR,
-        ),
+        sources=(ProviderName.SEMANTIC_SCHOLAR,),
     )
 
 
@@ -107,12 +103,8 @@ class StubProvider:
                     paper_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     title="A Paper Citing the Transformer",
                 ),
-                contexts=(
-                    "The Transformer architecture introduced self-attention.",
-                ),
-                intents=(
-                    "background",
-                ),
+                contexts=("The Transformer architecture introduced self-attention.",),
+                intents=("background",),
                 is_influential=True,
             )
         ]
@@ -137,12 +129,8 @@ class StubProvider:
                     paper_id="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                     title="Neural Machine Translation by Jointly Learning",
                 ),
-                contexts=(
-                    "The work builds on attention-based sequence models.",
-                ),
-                intents=(
-                    "background",
-                ),
+                contexts=("The work builds on attention-based sequence models.",),
+                intents=("background",),
                 is_influential=False,
             )
         ]
@@ -253,10 +241,7 @@ async def test_execute_get_paper_citations() -> None:
     assert result.returned == 1
 
     assert len(result.references) == 1
-    assert (
-        result.references[0].relation
-        == PaperRelationType.CITATION
-    )
+    assert result.references[0].relation == PaperRelationType.CITATION
 
     assert provider.last_limit == 25
     assert provider.last_offset == 10
@@ -282,10 +267,7 @@ async def test_execute_get_paper_references() -> None:
     assert result.returned == 1
     assert len(result.references) == 1
 
-    assert (
-        result.references[0].relation
-        == PaperRelationType.REFERENCE
-    )
+    assert result.references[0].relation == PaperRelationType.REFERENCE
 
     assert provider.last_limit == 30
     assert provider.last_offset == 5
@@ -322,9 +304,7 @@ async def test_execute_get_related_papers() -> None:
 
     assert result.papers[0].title.startswith("BERT")
 
-    assert provider.last_paper_id == (
-        "DOI:10.48550/arXiv.1706.03762"
-    )
+    assert provider.last_paper_id == ("DOI:10.48550/arXiv.1706.03762")
 
     assert provider.last_negative_paper_ids == [
         "negative-paper-one",
@@ -369,8 +349,7 @@ async def test_execute_resolve_paper_access() -> None:
     assert result.title == "Attention Is All You Need"
 
     assert result.identifiers == (
-        "semantic_scholar:"
-        "204e3073870fae3d05bcbc2f6a8e263d9b72e776"
+        "semantic_scholar:204e3073870fae3d05bcbc2f6a8e263d9b72e776"
     )
 
     assert result.access.status == AccessStatus.OPEN_ACCESS

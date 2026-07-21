@@ -123,6 +123,41 @@ class Settings(BaseSettings):
         validation_alias="HTTP_USER_AGENT",
     )
 
+    # In-memory caching
+
+    cache_enabled: bool = Field(
+        default=True,
+        validation_alias="CACHE_ENABLED",
+    )
+
+    search_cache_max_size: int = Field(
+        default=500,
+        ge=1,
+        le=10_000,
+        validation_alias="SEARCH_CACHE_MAX_SIZE",
+    )
+
+    search_cache_ttl_seconds: float = Field(
+        default=900.0,
+        gt=0,
+        le=86_400,
+        validation_alias="SEARCH_CACHE_TTL_SECONDS",
+    )
+
+    paper_cache_max_size: int = Field(
+        default=5_000,
+        ge=1,
+        le=100_000,
+        validation_alias="PAPER_CACHE_MAX_SIZE",
+    )
+
+    paper_cache_ttl_seconds: float = Field(
+        default=86_400.0,
+        gt=0,
+        le=604_800,
+        validation_alias="PAPER_CACHE_TTL_SECONDS",
+    )
+
     # Semantic Scholar
 
     semantic_scholar_api_key: SecretStr | None = Field(

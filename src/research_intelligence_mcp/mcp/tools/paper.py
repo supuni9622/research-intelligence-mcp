@@ -199,9 +199,7 @@ async def execute_get_related_papers(
     )
 
     negative_paper_ids = (
-        list(paper_input.negative_paper_ids)
-        if paper_input.negative_paper_ids
-        else None
+        list(paper_input.negative_paper_ids) if paper_input.negative_paper_ids else None
     )
 
     papers = await provider.get_related_papers(

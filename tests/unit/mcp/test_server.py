@@ -29,9 +29,7 @@ class StubSearchService:
     ) -> object:
         """Fail if unexpectedly executed."""
 
-        raise AssertionError(
-            "Search should not execute during registration."
-        )
+        raise AssertionError("Search should not execute during registration.")
 
 
 class StubProviderRegistry:
@@ -72,16 +70,11 @@ def build_server_dependencies() -> AppDependencies:
 async def test_server_registers_expected_tools() -> None:
     """The server should expose all implemented MCP tools."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    tool_names = {
-        tool.name
-        for tool in tools
-    }
+    tool_names = {tool.name for tool in tools}
 
     assert tool_names == {
         "health_check",
@@ -98,17 +91,11 @@ async def test_server_registers_expected_tools() -> None:
 async def test_search_papers_has_input_and_output_schemas() -> None:
     """The search tool should expose structured protocol schemas."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    search_tool = next(
-        tool
-        for tool in tools
-        if tool.name == "search_papers"
-    )
+    search_tool = next(tool for tool in tools if tool.name == "search_papers")
 
     assert search_tool.description is not None
     assert "Semantic Scholar" in search_tool.description
@@ -135,17 +122,11 @@ async def test_search_papers_has_input_and_output_schemas() -> None:
 async def test_get_paper_has_input_and_output_schemas() -> None:
     """The get-paper tool should expose structured protocol schemas."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    paper_tool = next(
-        tool
-        for tool in tools
-        if tool.name == "get_paper"
-    )
+    paper_tool = next(tool for tool in tools if tool.name == "get_paper")
 
     assert paper_tool.description is not None
     assert "single academic paper" in paper_tool.description
@@ -184,17 +165,11 @@ async def test_paper_graph_tools_have_structured_schemas(
 ) -> None:
     """Citation and reference tools should expose graph input schemas."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    graph_tool = next(
-        tool
-        for tool in tools
-        if tool.name == tool_name
-    )
+    graph_tool = next(tool for tool in tools if tool.name == tool_name)
 
     assert graph_tool.description is not None
     assert "Semantic Scholar" in graph_tool.description
@@ -228,17 +203,11 @@ async def test_paper_graph_tools_have_structured_schemas(
 async def test_get_related_papers_has_structured_schema() -> None:
     """The related-paper tool should expose recommendation inputs."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    related_tool = next(
-        tool
-        for tool in tools
-        if tool.name == "get_related_papers"
-    )
+    related_tool = next(tool for tool in tools if tool.name == "get_related_papers")
 
     assert related_tool.description is not None
     assert "recommendation" in related_tool.description
@@ -272,17 +241,11 @@ async def test_get_related_papers_has_structured_schema() -> None:
 async def test_resolve_paper_access_has_structured_schema() -> None:
     """The access tool should expose paper resolution inputs."""
 
-    server = create_mcp_server(
-        build_server_dependencies()
-    )
+    server = create_mcp_server(build_server_dependencies())
 
     tools = await server.list_tools()
 
-    access_tool = next(
-        tool
-        for tool in tools
-        if tool.name == "resolve_paper_access"
-    )
+    access_tool = next(tool for tool in tools if tool.name == "resolve_paper_access")
 
     assert access_tool.description is not None
     assert "access" in access_tool.description

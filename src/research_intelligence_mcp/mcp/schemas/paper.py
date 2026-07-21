@@ -97,8 +97,7 @@ class GetRelatedPapersInput(GetPaperInput):
         default_factory=tuple,
         max_length=100,
         description=(
-            "Optional paper identifiers that should reduce recommendation "
-            "similarity."
+            "Optional paper identifiers that should reduce recommendation similarity."
         ),
     )
 
@@ -123,25 +122,19 @@ class GetRelatedPapersInput(GetPaperInput):
                 tuple,
             ),
         ):
-            raise ValueError(
-                "negative_paper_ids must be a list or tuple."
-            )
+            raise ValueError("negative_paper_ids must be a list or tuple.")
 
         normalized_values: list[str] = []
         seen: set[str] = set()
 
         for item in value:
             if not isinstance(item, str):
-                raise ValueError(
-                    "Every negative paper identifier must be a string."
-                )
+                raise ValueError("Every negative paper identifier must be a string.")
 
             normalized = item.strip()
 
             if not normalized:
-                raise ValueError(
-                    "Negative paper identifiers cannot be empty."
-                )
+                raise ValueError("Negative paper identifiers cannot be empty.")
 
             comparison_key = normalized.casefold()
 
