@@ -35,7 +35,7 @@ research-intelligence-mcp = "research_intelligence_mcp.main:main"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.11,<2",
+    "mypy>=1.11,<3",
     "pytest>=8,<9",
     "pytest-asyncio>=0.23,<1",
     "respx>=0.22,<1",
