@@ -40,7 +40,7 @@ dev = [
     "pytest-asyncio>=0.23,<1",
     "respx>=0.22,<1",
     "ruff>=0.6,<1",
-    "types-cachetools>=6.2.0.20260408,<7",
+    "types-cachetools>=6.2.0.20260408,<8",
     "types-defusedxml>=0.7,<1",
 ]
 
