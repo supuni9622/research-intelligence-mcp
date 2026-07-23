@@ -1,0 +1,55 @@
+{
+  "_comment": "Example ECS service configuration fragment enabling Service Connect for research-intelligence-mcp. Merge the `serviceConnectConfiguration` block into your `aws ecs create-service` / `update-service` request or Terraform/CDK equivalent; this file is not applied automatically.",
+
+  "cluster": "<CLUSTER_NAME>",
+  "serviceName": "research-intelligence-mcp",
+  "taskDefinition": "research-intelligence-mcp",
+  "desiredCount": 2,
+  "launchType": "FARGATE",
+
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": ["<PRIVATE_SUBNET_ID_1>", "<PRIVATE_SUBNET_ID_2>"],
+      "securityGroups": ["<MCP_SECURITY_GROUP_ID>"],
+      "assignPublicIp": "DISABLED"
+    }
+  },
+
+  "serviceConnectConfiguration": {
+    "enabled": true,
+    "namespace": "<SERVICE_CONNECT_NAMESPACE>",
+    "services": [
+      {
+        "portName": "mcp-http",
+        "discoveryName": "research-intelligence-mcp",
+        "clientAliases": [
+          {
+            "port": 8000,
+            "dnsName": "research-intelligence-mcp"
+          }
+        ]
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/ecs/research-intelligence-mcp/service-connect",
+        "awslogs-region": "<REGION>",
+        "awslogs-stream-prefix": "service-connect"
+      }
+    }
+  },
+
+  "deploymentConfiguration": {
+    "deploymentCircuitBreaker": {
+      "enable": true,
+      "rollback": true
+    },
+    "minimumHealthyPercent": 100,
+    "maximumPercent": 200
+  },
+
+  "healthCheckGracePeriodSeconds": 30,
+
+  "_resolvedInternalEndpoint": "http://research-intelligence-mcp:8000/mcp"
+}

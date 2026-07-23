@@ -150,6 +150,16 @@ research-intelligence-mcp/
 ├── tests/
 ├── scripts/
 │   └── generate_dev_token.py
+├── deployment/
+│   ├── ecs/
+│   │   ├── task-definition.json
+│   │   ├── service-connect-example.json
+│   │   └── README.md
+│   └── scripts/
+│       ├── smoke_test.py
+│       └── wait_for_ready.py
+├── Dockerfile
+├── .dockerignore
 ├── pyproject.toml
 ├── README.md
 └── .env.example
@@ -262,6 +272,11 @@ uv build
 }
 ```
 
+For full step-by-step instructions covering Claude Desktop, Cursor, MCP
+Inspector, and remote `streamable-http` clients (including bearer-JWT
+authentication), see
+[`docs/research_intelligence_mcp_client_setup.md`](docs/research_intelligence_mcp_client_setup.md).
+
 ---
 
 # Test using MCP Inspector
@@ -323,6 +338,11 @@ main()
 
 # Remote Deployment and Authentication
 
+For the full deployment guide (Docker, AWS ECS, secrets, smoke tests, and
+the remaining manual AWS steps), see
+[`docs/research_intelligence_mcp_deployment_guide.md`](docs/research_intelligence_mcp_deployment_guide.md).
+The summary below covers the basics.
+
 `stdio` remains the default local transport and requires no authentication.
 
 For remote deployments (for example, integrating with ResearchMind), the
@@ -341,6 +361,46 @@ See `docs/research_intelligence_mcp_authentication.md` for the full
 architecture, `docs/research_intelligence_mcp_authentication_testing.md`
 for a verified step-by-step guide to testing it locally, and
 `.env.example` for every `AUTH_*` and `MCP_*` setting.
+
+On `streamable-http`, the server also exposes unauthenticated HTTP routes
+alongside `/mcp`:
+
+| Route | Purpose |
+|---|---|
+| `GET /health` | Liveness only. Never calls Semantic Scholar or arXiv. |
+| `GET /ready` | Readiness. Returns `503` once graceful shutdown has begun. |
+| `GET /metrics` | Prometheus text format (tool, provider, cache, and HTTP metrics). Keep this endpoint network-private. |
+
+## Container
+
+Build and run the production container:
+
+```bash
+docker build -t research-intelligence-mcp:local .
+
+docker run --rm -p 8000:8000 --env-file .env research-intelligence-mcp:local
+```
+
+The image defaults to `MCP_TRANSPORT=streamable-http`, binds `0.0.0.0:8000`,
+runs as a non-root user, and ships a container-level `HEALTHCHECK` against
+`/health`. See `Dockerfile` and `.dockerignore`.
+
+## AWS ECS
+
+Reference (unapplied) task-definition and Service Connect templates,
+security-group guidance, and a deployment/rollback runbook live in
+`deployment/ecs/README.md`.
+
+## Deployment Smoke Tests
+
+```bash
+uv run python deployment/scripts/wait_for_ready.py --base-url http://127.0.0.1:8000
+uv run python deployment/scripts/smoke_test.py --base-url http://127.0.0.1:8000
+```
+
+`smoke_test.py` checks `/health`, `/ready`, `/metrics`, MCP session
+initialization, tool discovery, and an authenticated `health_check` +
+`search_papers` call. Pass `--auth-token` when `AUTH_ENABLED=true`.
 
 ---
 

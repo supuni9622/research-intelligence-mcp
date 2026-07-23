@@ -23,11 +23,13 @@ dependencies = [
     "defusedxml>=0.7,<1",
     "httpx>=0.28,<1",
     "mcp>=1.27,<2",
+    "prometheus-client>=0.25.0",
     "pydantic>=2.7,<3",
     "pydantic-settings>=2.3,<3",
     "pyjwt[crypto]>=2.10,<3",
     "structlog>=24,<26",
     "tenacity>=9,<10",
+    "uvicorn>=0.51.0",
 ]
 
 [project.scripts]

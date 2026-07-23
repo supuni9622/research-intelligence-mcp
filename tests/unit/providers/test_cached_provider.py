@@ -23,6 +23,9 @@ from research_intelligence_mcp.domain.requests import (
 from research_intelligence_mcp.infrastructure.cache.ttl import (
     AsyncBoundedTTLCache,
 )
+from research_intelligence_mcp.infrastructure.observability.metrics import (
+    METRICS_REGISTRY,
+)
 from research_intelligence_mcp.providers.cached import (
     CachedPaperProvider,
 )
@@ -278,3 +281,100 @@ async def test_close_delegates_to_provider() -> None:
     await cached_provider.close()
 
     assert provider.close_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_search_records_provider_metrics_only_on_cache_miss() -> None:
+    """provider_requests_total should count real provider calls, not cache hits."""
+
+    provider = StubProvider()
+    cached_provider = build_cached_provider(provider)
+
+    request = SearchRequest(
+        query="metrics test query",
+        providers=(ProviderName.ARXIV,),
+    )
+
+    before = (
+        METRICS_REGISTRY.get_sample_value(
+            "provider_requests_total",
+            {"provider": "arxiv", "operation": "search", "status": "success"},
+        )
+        or 0.0
+    )
+
+    await cached_provider.search_papers(request)
+    await cached_provider.search_papers(request)
+
+    after = METRICS_REGISTRY.get_sample_value(
+        "provider_requests_total",
+        {"provider": "arxiv", "operation": "search", "status": "success"},
+    )
+
+    assert after == before + 1.0
+    assert provider.search_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_search_failure_records_provider_failure_metric() -> None:
+    """A raised provider error should be recorded as a provider failure."""
+
+    provider = StubProvider()
+    provider.fail_search = True
+    cached_provider = build_cached_provider(provider)
+
+    request = SearchRequest(
+        query="metrics failure query",
+        providers=(ProviderName.ARXIV,),
+    )
+
+    before = (
+        METRICS_REGISTRY.get_sample_value(
+            "provider_failures_total",
+            {
+                "provider": "arxiv",
+                "operation": "search",
+                "error_type": "ProviderTransportError",
+            },
+        )
+        or 0.0
+    )
+
+    with pytest.raises(ProviderTransportError):
+        await cached_provider.search_papers(request)
+
+    after = METRICS_REGISTRY.get_sample_value(
+        "provider_failures_total",
+        {
+            "provider": "arxiv",
+            "operation": "search",
+            "error_type": "ProviderTransportError",
+        },
+    )
+
+    assert after == before + 1.0
+
+
+@pytest.mark.asyncio
+async def test_get_citations_records_provider_result_count() -> None:
+    """Uncached graph operations should record provider result counts."""
+
+    provider = StubProvider()
+    cached_provider = build_cached_provider(provider)
+
+    before = (
+        METRICS_REGISTRY.get_sample_value(
+            "provider_results_total",
+            {"provider": "arxiv", "operation": "get_citations"},
+        )
+        or 0.0
+    )
+
+    await cached_provider.get_citations("1706.03762")
+
+    after = METRICS_REGISTRY.get_sample_value(
+        "provider_results_total",
+        {"provider": "arxiv", "operation": "get_citations"},
+    )
+
+    assert after == before + 1.0

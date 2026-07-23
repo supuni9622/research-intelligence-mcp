@@ -23,6 +23,10 @@ from research_intelligence_mcp.infrastructure.cache.keys import (
 from research_intelligence_mcp.infrastructure.logging import (
     get_logger,
 )
+from research_intelligence_mcp.infrastructure.observability.metrics import (
+    record_provider_call,
+    record_provider_results,
+)
 from research_intelligence_mcp.providers.base import (
     PaperProvider,
 )
@@ -96,7 +100,10 @@ class CachedPaperProvider:
             provider=self.name.value,
         )
 
-        result = await self._provider.search_papers(request)
+        with record_provider_call(self.name.value, "search"):
+            result = await self._provider.search_papers(request)
+
+        record_provider_results(self.name.value, "search", len(result.papers))
 
         await self._search_cache.set(
             cache_key,
@@ -137,7 +144,10 @@ class CachedPaperProvider:
             provider=self.name.value,
         )
 
-        paper = await self._provider.get_paper(paper_id)
+        with record_provider_call(self.name.value, "get_paper"):
+            paper = await self._provider.get_paper(paper_id)
+
+        record_provider_results(self.name.value, "get_paper", 1)
 
         await self._paper_cache.set(
             cache_key,
@@ -155,11 +165,16 @@ class CachedPaperProvider:
     ) -> list[PaperReference]:
         """Delegate citation retrieval without caching."""
 
-        return await self._provider.get_citations(
-            paper_id,
-            limit=limit,
-            offset=offset,
-        )
+        with record_provider_call(self.name.value, "get_citations"):
+            result = await self._provider.get_citations(
+                paper_id,
+                limit=limit,
+                offset=offset,
+            )
+
+        record_provider_results(self.name.value, "get_citations", len(result))
+
+        return result
 
     async def get_references(
         self,
@@ -170,11 +185,16 @@ class CachedPaperProvider:
     ) -> list[PaperReference]:
         """Delegate reference retrieval without caching."""
 
-        return await self._provider.get_references(
-            paper_id,
-            limit=limit,
-            offset=offset,
-        )
+        with record_provider_call(self.name.value, "get_references"):
+            result = await self._provider.get_references(
+                paper_id,
+                limit=limit,
+                offset=offset,
+            )
+
+        record_provider_results(self.name.value, "get_references", len(result))
+
+        return result
 
     async def get_related_papers(
         self,
@@ -185,11 +205,16 @@ class CachedPaperProvider:
     ) -> list[Paper]:
         """Delegate related-paper retrieval without caching."""
 
-        return await self._provider.get_related_papers(
-            paper_id,
-            limit=limit,
-            negative_paper_ids=negative_paper_ids,
-        )
+        with record_provider_call(self.name.value, "get_related_papers"):
+            result = await self._provider.get_related_papers(
+                paper_id,
+                limit=limit,
+                negative_paper_ids=negative_paper_ids,
+            )
+
+        record_provider_results(self.name.value, "get_related_papers", len(result))
+
+        return result
 
     async def close(self) -> None:
         """Close the wrapped provider."""

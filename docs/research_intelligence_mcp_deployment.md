@@ -4,6 +4,11 @@
 
 This document describes how to deploy Research Intelligence MCP as a production service and integrate it with ResearchMind.
 
+For the practical, current-state guide — exact commands, what has actually
+been built and verified, and the remaining manual AWS steps — see
+[`docs/research_intelligence_mcp_deployment_guide.md`](research_intelligence_mcp_deployment_guide.md).
+This document remains the architecture and long-term vision reference.
+
 ---
 
 # Deployment Evolution
@@ -510,12 +515,15 @@ flowchart TB
 
 # Immediate Next Milestones
 
-- [ ] Streamable HTTP transport
-- [ ] Docker image
-- [ ] Health endpoints
-- [ ] JWT validation
-- [ ] Correlation IDs
-- [ ] Structured metrics
-- [ ] ECS deployment
-- [ ] ResearchMind MCP client
-- [ ] Deployment smoke tests
+- [x] Streamable HTTP transport
+- [x] Docker image
+- [x] Health endpoints
+- [x] JWT validation
+- [x] Correlation IDs (bound to structured logs; HTTP response-header echo not yet added)
+- [x] Structured metrics
+- [ ] ECS deployment (reference templates in `deployment/ecs/` are unapplied; no live AWS deployment yet)
+- [ ] ResearchMind MCP client (owned by the companion ResearchMind repository)
+- [x] Deployment smoke tests (local container / Level 1; ECS Level 2 and ResearchMind Level 3 pending a live deployment)
+
+See `docs/research_intelligence_mcp_roadmap.md` Phase 7B for the full
+implementation record.

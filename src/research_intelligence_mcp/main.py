@@ -1,7 +1,12 @@
 """Research Intelligence MCP application entry point."""
 
+import anyio
+
 from research_intelligence_mcp.config.settings import (
     get_settings,
+)
+from research_intelligence_mcp.infrastructure.lifecycle import (
+    LifecycleState,
 )
 from research_intelligence_mcp.infrastructure.logging import (
     configure_logging,
@@ -12,6 +17,9 @@ from research_intelligence_mcp.mcp.dependencies import (
 )
 from research_intelligence_mcp.mcp.server import (
     create_mcp_server,
+)
+from research_intelligence_mcp.mcp.transport import (
+    run_server,
 )
 
 
@@ -28,8 +36,12 @@ def main() -> None:
     logger = get_logger(__name__)
 
     dependencies = build_dependencies(settings=settings)
+    lifecycle = LifecycleState()
 
-    server = create_mcp_server(dependencies=dependencies)
+    server = create_mcp_server(
+        dependencies=dependencies,
+        lifecycle=lifecycle,
+    )
 
     logger.info(
         "mcp_server_starting",
@@ -41,14 +53,26 @@ def main() -> None:
     )
 
     try:
-        server.run(
-            transport=settings.mcp_transport,
+        run_server(
+            server=server,
+            dependencies=dependencies,
+            settings=settings,
+            lifecycle=lifecycle,
         )
     except KeyboardInterrupt:
         logger.info(
             "mcp_server_stopped",
             reason="keyboard_interrupt",
         )
+    finally:
+        # The streamable-http transport closes dependencies itself from its
+        # ASGI lifespan shutdown handler (LifespanShutdownMiddleware), since
+        # that is the only place graceful shutdown can be observed for that
+        # transport. stdio has no such hook, so close explicitly here.
+        if settings.mcp_transport == "stdio":
+            anyio.run(dependencies.close)
+
+        logger.info("mcp_server_shutdown_complete")
 
 
 if __name__ == "__main__":
@@ -62,6 +86,7 @@ if __name__ == "__main__":
 #   ├── load settings
 #   ├── configure stderr logging
 #   ├── build dependency container
-#   ├── create FastMCP server
-#   ├── register tools
-#   └── run stdio transport
+#   ├── create lifecycle state
+#   ├── create FastMCP server, register tools + health/ready/metrics routes
+#   ├── run selected transport (stdio, or streamable-http via uvicorn)
+#   └── close dependencies on shutdown

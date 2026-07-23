@@ -7,11 +7,18 @@ from pydantic import AnyHttpUrl
 from research_intelligence_mcp.infrastructure.auth.jwt_verifier import (
     JWTBearerTokenVerifier,
 )
+from research_intelligence_mcp.infrastructure.lifecycle import (
+    LifecycleState,
+)
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
 )
 from research_intelligence_mcp.mcp.tools.health import (
+    register_health_routes,
     register_health_tools,
+)
+from research_intelligence_mcp.mcp.tools.metrics import (
+    register_metrics_route,
 )
 from research_intelligence_mcp.mcp.tools.paper import (
     register_paper_tools,
@@ -23,18 +30,28 @@ from research_intelligence_mcp.mcp.tools.search import (
 
 def create_mcp_server(
     dependencies: AppDependencies,
+    *,
+    lifecycle: LifecycleState | None = None,
 ) -> FastMCP:
     """Create and configure the Research Intelligence MCP server.
 
     Args:
         dependencies:
             Long-lived application dependencies shared by registered tools.
+        lifecycle:
+            Shared readiness/shutdown state backing the ``/ready`` HTTP
+            route. Defaults to a fresh, always-ready state, which is
+            sufficient for tests and for callers that never signal
+            shutdown explicitly.
 
     Returns:
         A fully configured FastMCP server with academic paper discovery,
         metadata retrieval, citation graph, reference graph, recommendation,
         and access-resolution capabilities.
     """
+
+    if lifecycle is None:
+        lifecycle = LifecycleState()
 
     settings = dependencies.settings
 
@@ -94,6 +111,17 @@ def create_mcp_server(
     )
 
     register_health_tools(
+        server=server,
+        dependencies=dependencies,
+    )
+
+    register_health_routes(
+        server=server,
+        dependencies=dependencies,
+        lifecycle=lifecycle,
+    )
+
+    register_metrics_route(
         server=server,
         dependencies=dependencies,
     )

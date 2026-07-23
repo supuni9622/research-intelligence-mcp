@@ -209,6 +209,10 @@ versions, so it isn't reproduced here to avoid going stale). Point the
 client at `http://<MCP_HOST>:<MCP_PORT>/mcp` with `Authorization: Bearer
 <token>`, using a token minted as in step 5.
 
+For step-by-step connection instructions (stdio and streamable-http, with
+copy-pasteable config for each client) see
+`docs/research_intelligence_mcp_client_setup.md`.
+
 ---
 
 ## 9. Automated tests (no server required)

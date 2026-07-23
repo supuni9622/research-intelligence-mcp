@@ -12,6 +12,9 @@ from research_intelligence_mcp.domain.enums import (
 from research_intelligence_mcp.domain.models import (
     Paper,
 )
+from research_intelligence_mcp.infrastructure.observability.metrics import (
+    record_tool_call,
+)
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
 )
@@ -274,7 +277,7 @@ def register_paper_tools(
             Canonical provider-neutral paper metadata.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("get_paper"):
             paper_input = GetPaperInput(
                 provider=provider,
                 paper_id=paper_id,
@@ -312,7 +315,7 @@ def register_paper_tools(
             Structured canonical citation relationships.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("get_paper_citations"):
             paper_input = PaperGraphInput(
                 provider=provider,
                 paper_id=paper_id,
@@ -352,7 +355,7 @@ def register_paper_tools(
             Structured canonical reference relationships.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("get_paper_references"):
             paper_input = PaperGraphInput(
                 provider=provider,
                 paper_id=paper_id,
@@ -392,7 +395,7 @@ def register_paper_tools(
             Structured canonical related-paper recommendations.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("get_related_papers"):
             paper_input = GetRelatedPapersInput(
                 provider=provider,
                 paper_id=paper_id,
@@ -426,7 +429,7 @@ def register_paper_tools(
             Canonical access status, URLs, license, and repository metadata.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("resolve_paper_access"):
             paper_input = GetPaperInput(
                 provider=provider,
                 paper_id=paper_id,

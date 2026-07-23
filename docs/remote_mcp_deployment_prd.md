@@ -8,6 +8,11 @@
 **Deployment target:** AWS ECS Fargate  
 **Primary client:** ResearchMind backend
 
+> For the practical, current-state guide to what has actually been
+> implemented and how to run it — plus the remaining manual AWS steps —
+> see [`docs/research_intelligence_mcp_deployment_guide.md`](research_intelligence_mcp_deployment_guide.md).
+> This document is the original requirements spec.
+
 ---
 
 ## Document Boundary
@@ -55,15 +60,18 @@ ResearchMind Backend
 
 ## 2. Deliverables
 
-- [ ] Streamable HTTP transport
-- [ ] Docker image
-- [ ] Health endpoints
-- [ ] JWT validation
-- [ ] Correlation IDs
-- [ ] Structured metrics
-- [ ] ECS deployment
-- [ ] MCP deployment smoke tests
-- [ ] ResearchMind integration contract and handoff
+- [x] Streamable HTTP transport
+- [x] Docker image
+- [x] Health endpoints
+- [x] JWT validation
+- [x] Correlation IDs (log-bound; see Phase 7B "Known limitations" in the roadmap for the response-header gap)
+- [x] Structured metrics
+- [ ] ECS deployment — reference templates only; no live AWS deployment performed
+- [x] MCP deployment smoke tests — Level 1 (local container) implemented and passing; Levels 2/3 need a live ECS deployment
+- [ ] ResearchMind integration contract and handoff — owned by the companion ResearchMind repository
+
+See `docs/research_intelligence_mcp_roadmap.md` Phase 7B for the full
+implementation record, including what was verified and what remains manual.
 
 ## 3. Target Architecture
 

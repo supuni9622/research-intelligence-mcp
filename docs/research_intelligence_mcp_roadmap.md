@@ -436,12 +436,11 @@ Phase 4 is complete when:
 
 ## Remaining
 
-- [ ] Structured provider metrics
 - [ ] Sensitive-data-safe logging review
-- [ ] Full application graceful shutdown verification
-- [ ] CI security scanning
 
-Request correlation IDs are implemented — see Phase 7A.
+Request correlation IDs are implemented — see Phase 7A. Structured metrics
+and graceful shutdown are implemented — see Phase 7B. CI dependency and
+secret scanning are implemented — see Phase 9 (`.github/workflows/security.yml`).
 
 ## Security Requirements
 
@@ -483,8 +482,78 @@ architecture and the "Stage 2 Configuration Reference" section for settings.
 
 ## Deferred to a later milestone
 
-- [ ] Structured provider metrics and a broader sensitive-data logging review (Phase 7)
+- [ ] A broader sensitive-data logging review (Phase 7)
 - [ ] Stage 3 public OAuth (authorization-server provider, dynamic client registration)
+
+---
+
+# Phase 7B — Remote Deployment Infrastructure
+
+**Status:** ✅ Completed
+
+See `docs/remote_mcp_deployment_prd.md` and
+`docs/research_intelligence_mcp_deployment.md` for the full requirements,
+and `docs/research_intelligence_mcp_deployment_guide.md` for the practical,
+current-state guide (setup steps plus the remaining manual AWS tasks).
+
+## Deliverables
+
+- [x] `GET /health` and `GET /ready` HTTP routes on the `streamable-http`
+      transport (`mcp/tools/health.py`, registered via FastMCP's
+      `custom_route`, unauthenticated, `/health` never calls Semantic
+      Scholar or arXiv)
+- [x] `LifecycleState` + `LifespanShutdownMiddleware`
+      (`infrastructure/lifecycle.py`): `/ready` returns 503 once ASGI
+      lifespan shutdown begins
+- [x] `GET /metrics` in Prometheus text format (`mcp/tools/metrics.py`),
+      using a dedicated `CollectorRegistry` rather than the global default
+- [x] Structured, bounded-label metrics
+      (`infrastructure/observability/metrics.py`): `mcp_tool_*`,
+      `provider_*`, `cache_*` (mirrored from existing `CacheStats`), and
+      `mcp_http_*` (via `HttpMetricsMiddleware`, a raw ASGI middleware so
+      streaming MCP responses are not buffered)
+- [x] All 7 MCP tools instrumented with `record_tool_call`; both cached
+      providers instrumented with `record_provider_call` /
+      `record_provider_results` (recorded only on real provider calls, not
+      cache hits)
+- [x] `mcp/transport.py`: single place selecting `stdio` vs
+      `streamable-http` at runtime; `streamable-http` builds FastMCP's own
+      `streamable_http_app()`, wraps it with the metrics and shutdown
+      middleware above, and serves it with uvicorn
+- [x] `AppDependencies.close()` — previously defined but never called — is
+      now invoked on every shutdown path (ASGI lifespan for
+      `streamable-http`, `main.py`'s `finally` block for `stdio`)
+- [x] Multi-stage `Dockerfile` (non-root, exec-form `CMD`, container
+      `HEALTHCHECK` against `/health`, `PYTHONDONTWRITEBYTECODE=1`,
+      `PYTHONUNBUFFERED=1`) and `.dockerignore`; build, run, `/health`,
+      `/ready`, `/metrics`, and `docker stop` graceful-shutdown all verified
+      manually against a locally built image
+- [x] `deployment/ecs/` reference (unapplied) task-definition and Service
+      Connect templates plus a deployment/rollback runbook
+- [x] `deployment/scripts/wait_for_ready.py` and `smoke_test.py` — the
+      latter verified end-to-end against a running container: HTTP routes,
+      MCP session init, tool discovery, and live `health_check` /
+      `search_papers` calls
+- [x] Unit tests for lifecycle state, shutdown middleware, metrics,
+      HTTP middleware, the `/health` `/ready` `/metrics` routes, transport
+      selection, and provider-metrics recording
+- [x] Ruff, Mypy, Pytest, package build, and `docker build` quality gates
+
+## Known limitations
+
+- HTTP responses do not currently echo `X-Request-ID` / `X-Correlation-ID`
+  response headers (Phase 7A's correlation IDs are bound to structured
+  logs only, via `correlation_scope`). Adding response-header echo plus the
+  PRD's exact validation rules (128-char bound, control-character
+  rejection) was scoped out of this pass to avoid touching the existing,
+  already-tested correlation implementation.
+- `provider_rate_limits_total` and `provider_retries_total` (listed in the
+  deployment PRD) were not added; existing `provider_failures_total` with
+  `error_type` already distinguishes rate-limit failures from other
+  failures.
+- No live AWS deployment was performed — the ECS assets are templates for
+  an operator to fill in and apply; only the Docker image and the local
+  smoke test were actually executed.
 
 ---
 
@@ -575,10 +644,11 @@ Phase 3  ████████████████████ 100%
 Phase 4  ████████████████████ 100%
 Phase 5  ████████████████████ 100%
 Phase 6  ████████████████░░░░  75%
-Phase 7  ██████░░░░░░░░░░░░░░  30%
+Phase 7  ██████████████████░░  90%
 Phase 7A ████████████████████ 100%
+Phase 7B ████████████████████ 100%
 Phase 8  ░░░░░░░░░░░░░░░░░░░░   0%
-Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
+Phase 9  ████████████████████ 100%
 ```
 ---
 
@@ -613,41 +683,36 @@ Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
   default local transport and is unaffected. See
   `docs/research_intelligence_mcp_authentication.md`.
 
+- `/health`, `/ready`, and `/metrics` HTTP routes, structured tool/provider/
+  cache/HTTP metrics, graceful shutdown, a production Dockerfile, ECS
+  deployment templates, and deployment smoke test scripts are implemented
+  and verified against a locally built container. See Phase 7B above and
+  `docs/remote_mcp_deployment_prd.md`.
+
 Current limitations:
 
 - Citation/reference/recommendation tools are only supported by Semantic Scholar.
 - arXiv correctly returns normalized unsupported-operation errors.
 - Semantic Scholar graph endpoints require additional response-model validation and payload normalization.
 - Provider-aware field-of-study translation remains deferred.
+- See Phase 7B's "Known limitations" for deployment-infrastructure gaps
+  (correlation-ID response headers, rate-limit/retry metrics, no live AWS
+  deployment).
 
 The next implementation milestone is:
 
-1. Reliability and Infrastructure
-   - request correlation IDs
-   - structured metrics
-   - logging review
-   - full application graceful shutdown verification
-
-2. Continuous Integration
-   - GitHub Actions
-   - dependency scanning
-   - secret scanning
-   - automated quality gates
+1. Sensitive-data-safe logging review (remainder of Phase 7)
+2. Documentation and portfolio readiness (Phase 8)
+3. Live AWS ECS staging deployment and Level 2/3 smoke tests, once AWS
+   access is available (Milestones 7 and 9 of the deployment PRD)
 
 # Immediate Next Milestone
 
-Phase 7 — Reliability and Infrastructure
-
-Priority order:
-
-1. Request correlation IDs
-2. Structured provider metrics
-3. Logging review
-4. Full application graceful shutdown verification
-5. CI and security scanning
+Phase 8 — Documentation and Portfolio Readiness
 
 Deferred items:
 
 - Provider-aware field translation
 - Citation/reference payload normalization improvements
 - Additional provider integrations
+- Live AWS ECS deployment (Phase 7B's templates are unapplied)

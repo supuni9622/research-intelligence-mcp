@@ -5,8 +5,15 @@
 **Version:** 0.1.0  
 **Runtime:** Python 3.12  
 **Protocol:** Model Context Protocol  
-**Transport:** stdio  
+**Transport:** stdio (default) and streamable-http (remote/production)  
 **Primary providers:** Semantic Scholar and arXiv
+
+> Sections 5–8 below predate the `streamable-http` transport and cover
+> `stdio` only. For step-by-step client-connection instructions covering
+> both transports (plus remote/authenticated connections), see
+> `docs/research_intelligence_mcp_client_setup.md`. For deploying the
+> server itself (Docker, AWS ECS), see
+> `docs/research_intelligence_mcp_deployment_guide.md`.
 
 ---
 

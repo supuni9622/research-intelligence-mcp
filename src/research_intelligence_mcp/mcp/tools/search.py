@@ -13,6 +13,9 @@ from research_intelligence_mcp.domain.enums import (
 from research_intelligence_mcp.domain.requests import (
     SearchResult,
 )
+from research_intelligence_mcp.infrastructure.observability.metrics import (
+    record_tool_call,
+)
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
 )
@@ -126,7 +129,7 @@ def register_search_tools(
             papers, pagination, provider outcomes, warnings, and failures.
         """
 
-        with correlation_scope(ctx):
+        with correlation_scope(ctx), record_tool_call("search_papers"):
             search_input = SearchPapersInput(
                 query=query,
                 providers=providers,
