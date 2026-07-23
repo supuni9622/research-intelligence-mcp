@@ -1,7 +1,12 @@
 """FastMCP server construction."""
 
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
+from pydantic import AnyHttpUrl
 
+from research_intelligence_mcp.infrastructure.auth.jwt_verifier import (
+    JWTBearerTokenVerifier,
+)
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
 )
@@ -33,8 +38,38 @@ def create_mcp_server(
 
     settings = dependencies.settings
 
+    token_verifier: JWTBearerTokenVerifier | None = None
+    auth_settings: AuthSettings | None = None
+
+    if settings.auth_enabled:
+        # Bearer-JWT verification for the streamable-http transport (Stage 2
+        # of docs/research_intelligence_mcp_authentication.md). The stdio
+        # transport never routes through HTTP auth middleware, so these
+        # settings have no effect when MCP_TRANSPORT=stdio.
+        assert settings.auth_issuer is not None  # enforced by settings validation
+
+        token_verifier = JWTBearerTokenVerifier(settings)
+        auth_settings = AuthSettings(
+            # `AuthSettings.issuer_url` is only used for OAuth
+            # protected-resource-metadata discovery, not for bearer-token
+            # verification, so pydantic's URL normalization here (e.g. an
+            # added trailing slash) is harmless — actual `iss` comparison
+            # uses the raw `settings.auth_issuer` string in the verifier.
+            issuer_url=AnyHttpUrl(settings.auth_issuer),
+            resource_server_url=(
+                AnyHttpUrl(str(settings.auth_resource_server_url))
+                if settings.auth_resource_server_url is not None
+                else None
+            ),
+            required_scopes=settings.auth_required_scopes_list(),
+        )
+
     server = FastMCP(
         name=settings.mcp_server_name,
+        host=settings.mcp_host,
+        port=settings.mcp_port,
+        token_verifier=token_verifier,
+        auth=auth_settings,
         instructions=(
             "Research Intelligence MCP provides provider-neutral academic "
             "research tools backed by Semantic Scholar and arXiv. "

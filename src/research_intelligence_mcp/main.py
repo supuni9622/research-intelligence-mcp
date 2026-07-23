@@ -37,6 +37,7 @@ def main() -> None:
         version=settings.app_version,
         environment=(settings.app_environment),
         transport=settings.mcp_transport,
+        auth_enabled=settings.auth_enabled,
     )
 
     try:

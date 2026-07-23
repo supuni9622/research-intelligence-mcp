@@ -148,6 +148,8 @@ research-intelligence-mcp/
 ├── src/
 │   └── research_intelligence_mcp/
 ├── tests/
+├── scripts/
+│   └── generate_dev_token.py
 ├── pyproject.toml
 ├── README.md
 └── .env.example
@@ -317,6 +319,29 @@ main()
 ## Search Tool
 ![search mcp tool](image-1.png)
 ![search-mcp-output](image-2.png)
+---
+
+# Remote Deployment and Authentication
+
+`stdio` remains the default local transport and requires no authentication.
+
+For remote deployments (for example, integrating with ResearchMind), the
+server also supports a `streamable-http` transport with service-to-service
+bearer-JWT authentication:
+
+```bash
+MCP_TRANSPORT=streamable-http
+AUTH_ENABLED=true
+AUTH_ISSUER=https://auth.researchmind.ai
+AUTH_AUDIENCE=research-intelligence-mcp
+AUTH_JWKS_URL=https://auth.researchmind.ai/.well-known/jwks.json
+```
+
+See `docs/research_intelligence_mcp_authentication.md` for the full
+architecture, `docs/research_intelligence_mcp_authentication_testing.md`
+for a verified step-by-step guide to testing it locally, and
+`.env.example` for every `AUTH_*` and `MCP_*` setting.
+
 ---
 
 # License

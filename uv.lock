@@ -718,6 +718,7 @@ dependencies = [
     { name = "mcp" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "structlog" },
     { name = "tenacity" },
 ]
@@ -743,6 +744,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.27,<2" },
     { name = "pydantic", specifier = ">=2.7,<3" },
     { name = "pydantic-settings", specifier = ">=2.3,<3" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10,<3" },
     { name = "structlog", specifier = ">=24,<26" },
     { name = "tenacity", specifier = ">=9,<10" },
 ]

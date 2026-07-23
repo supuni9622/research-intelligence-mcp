@@ -436,11 +436,12 @@ Phase 4 is complete when:
 
 ## Remaining
 
-- [ ] Request correlation IDs
 - [ ] Structured provider metrics
 - [ ] Sensitive-data-safe logging review
 - [ ] Full application graceful shutdown verification
 - [ ] CI security scanning
+
+Request correlation IDs are implemented — see Phase 7A.
 
 ## Security Requirements
 
@@ -452,6 +453,38 @@ Phase 4 is complete when:
 - Do not expose raw provider exceptions to MCP clients.
 - Commit and review `uv.lock`.
 - Run dependency and source scanning in CI.
+
+---
+
+# Phase 7A — Authentication (Stage 2: Service-to-Service JWT)
+
+**Status:** ✅ Completed
+
+See `docs/research_intelligence_mcp_authentication.md` for the full
+architecture and the "Stage 2 Configuration Reference" section for settings.
+
+## Deliverables
+
+- [x] `streamable-http` transport option (`MCP_TRANSPORT`, `MCP_HOST`, `MCP_PORT`)
+- [x] `AUTH_*` settings with fail-fast validation (issuer/audience/signing-key consistency)
+- [x] `JWTBearerTokenVerifier` (`infrastructure/auth/jwt_verifier.py`) implementing the official MCP SDK `TokenVerifier` protocol
+- [x] RS256/ES256/PS256 verification via JWKS endpoint (`PyJWKClient`, bounded key cache)
+- [x] HS256 verification via shared secret (local/test only)
+- [x] Signature, expiry (with leeway), issuer, and audience validation
+- [x] Required-scope enforcement wired through `AuthSettings` + the SDK's `RequireAuthMiddleware`
+- [x] `stdio` transport unaffected — `AUTH_*` settings have no effect when `MCP_TRANSPORT=stdio`
+- [x] No token, secret, or key material logged
+- [x] Request correlation (`X-Request-ID` / `X-Correlation-ID`) bound to every tool call's structured logs, with a generated fallback ID under `stdio` (`mcp/observability.py`)
+- [x] Bounded, validated `X-Request-Context` (user/tenant/session) passthrough as log-only observability metadata — never the raw user token, never returned in tool output
+- [x] All 7 registered MCP tools wrapped in the correlation scope via an MCP SDK `Context` parameter (verified not to leak into any tool's public input schema)
+- [x] Settings, verifier, observability, and server-wiring unit tests
+- [x] `.env.example` updated
+- [x] Ruff, Mypy, Pytest, and package build quality gates
+
+## Deferred to a later milestone
+
+- [ ] Structured provider metrics and a broader sensitive-data logging review (Phase 7)
+- [ ] Stage 3 public OAuth (authorization-server provider, dynamic client registration)
 
 ---
 
@@ -543,6 +576,7 @@ Phase 4  ████████████████████ 100%
 Phase 5  ████████████████████ 100%
 Phase 6  ████████████████░░░░  75%
 Phase 7  ██████░░░░░░░░░░░░░░  30%
+Phase 7A ████████████████████ 100%
 Phase 8  ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
 ```
@@ -573,6 +607,11 @@ Phase 9  ░░░░░░░░░░░░░░░░░░░░   0%
 - Cache dependencies are wired through the application dependency container.
 - Cache cleanup is included in application shutdown handling.
 - Ruff and Mypy validation pass for the caching implementation.
+
+- The `streamable-http` transport and Stage 2 service-to-service JWT
+  authentication (`AUTH_*` settings) are implemented; `stdio` remains the
+  default local transport and is unaffected. See
+  `docs/research_intelligence_mcp_authentication.md`.
 
 Current limitations:
 

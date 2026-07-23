@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from typing import Any
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from research_intelligence_mcp.domain.enums import (
     ProviderName,
@@ -12,6 +14,9 @@ from research_intelligence_mcp.domain.models import (
 )
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
+)
+from research_intelligence_mcp.mcp.observability import (
+    correlation_scope,
 )
 from research_intelligence_mcp.mcp.schemas.paper import (
     GetPaperInput,
@@ -253,6 +258,7 @@ def register_paper_tools(
         description=_GET_PAPER_DESCRIPTION,
     )
     async def get_paper(
+        ctx: Context[Any, Any, Any],
         provider: ProviderName,
         paper_id: str,
     ) -> Paper:
@@ -268,21 +274,23 @@ def register_paper_tools(
             Canonical provider-neutral paper metadata.
         """
 
-        paper_input = GetPaperInput(
-            provider=provider,
-            paper_id=paper_id,
-        )
+        with correlation_scope(ctx):
+            paper_input = GetPaperInput(
+                provider=provider,
+                paper_id=paper_id,
+            )
 
-        return await execute_get_paper(
-            paper_input=paper_input,
-            dependencies=dependencies,
-        )
+            return await execute_get_paper(
+                paper_input=paper_input,
+                dependencies=dependencies,
+            )
 
     @server.tool(
         name="get_paper_citations",
         description=_GET_PAPER_CITATIONS_DESCRIPTION,
     )
     async def get_paper_citations(
+        ctx: Context[Any, Any, Any],
         provider: ProviderName,
         paper_id: str,
         limit: int = 20,
@@ -304,23 +312,25 @@ def register_paper_tools(
             Structured canonical citation relationships.
         """
 
-        paper_input = PaperGraphInput(
-            provider=provider,
-            paper_id=paper_id,
-            limit=limit,
-            offset=offset,
-        )
+        with correlation_scope(ctx):
+            paper_input = PaperGraphInput(
+                provider=provider,
+                paper_id=paper_id,
+                limit=limit,
+                offset=offset,
+            )
 
-        return await execute_get_paper_citations(
-            paper_input=paper_input,
-            dependencies=dependencies,
-        )
+            return await execute_get_paper_citations(
+                paper_input=paper_input,
+                dependencies=dependencies,
+            )
 
     @server.tool(
         name="get_paper_references",
         description=_GET_PAPER_REFERENCES_DESCRIPTION,
     )
     async def get_paper_references(
+        ctx: Context[Any, Any, Any],
         provider: ProviderName,
         paper_id: str,
         limit: int = 20,
@@ -342,23 +352,25 @@ def register_paper_tools(
             Structured canonical reference relationships.
         """
 
-        paper_input = PaperGraphInput(
-            provider=provider,
-            paper_id=paper_id,
-            limit=limit,
-            offset=offset,
-        )
+        with correlation_scope(ctx):
+            paper_input = PaperGraphInput(
+                provider=provider,
+                paper_id=paper_id,
+                limit=limit,
+                offset=offset,
+            )
 
-        return await execute_get_paper_references(
-            paper_input=paper_input,
-            dependencies=dependencies,
-        )
+            return await execute_get_paper_references(
+                paper_input=paper_input,
+                dependencies=dependencies,
+            )
 
     @server.tool(
         name="get_related_papers",
         description=_GET_RELATED_PAPERS_DESCRIPTION,
     )
     async def get_related_papers(
+        ctx: Context[Any, Any, Any],
         provider: ProviderName,
         paper_id: str,
         limit: int = 10,
@@ -380,23 +392,25 @@ def register_paper_tools(
             Structured canonical related-paper recommendations.
         """
 
-        paper_input = GetRelatedPapersInput(
-            provider=provider,
-            paper_id=paper_id,
-            limit=limit,
-            negative_paper_ids=negative_paper_ids,
-        )
+        with correlation_scope(ctx):
+            paper_input = GetRelatedPapersInput(
+                provider=provider,
+                paper_id=paper_id,
+                limit=limit,
+                negative_paper_ids=negative_paper_ids,
+            )
 
-        return await execute_get_related_papers(
-            paper_input=paper_input,
-            dependencies=dependencies,
-        )
+            return await execute_get_related_papers(
+                paper_input=paper_input,
+                dependencies=dependencies,
+            )
 
     @server.tool(
         name="resolve_paper_access",
         description=_RESOLVE_PAPER_ACCESS_DESCRIPTION,
     )
     async def resolve_paper_access(
+        ctx: Context[Any, Any, Any],
         provider: ProviderName,
         paper_id: str,
     ) -> PaperAccessResult:
@@ -412,12 +426,13 @@ def register_paper_tools(
             Canonical access status, URLs, license, and repository metadata.
         """
 
-        paper_input = GetPaperInput(
-            provider=provider,
-            paper_id=paper_id,
-        )
+        with correlation_scope(ctx):
+            paper_input = GetPaperInput(
+                provider=provider,
+                paper_id=paper_id,
+            )
 
-        return await execute_resolve_paper_access(
-            paper_input=paper_input,
-            dependencies=dependencies,
-        )
+            return await execute_resolve_paper_access(
+                paper_input=paper_input,
+                dependencies=dependencies,
+            )

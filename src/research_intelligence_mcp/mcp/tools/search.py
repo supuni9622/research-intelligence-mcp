@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from typing import Any
+
+from mcp.server.fastmcp import Context, FastMCP
 
 from research_intelligence_mcp.domain.enums import (
     ProviderName,
@@ -13,6 +15,9 @@ from research_intelligence_mcp.domain.requests import (
 )
 from research_intelligence_mcp.mcp.dependencies import (
     AppDependencies,
+)
+from research_intelligence_mcp.mcp.observability import (
+    correlation_scope,
 )
 from research_intelligence_mcp.mcp.schemas.search import (
     SearchPapersInput,
@@ -80,6 +85,7 @@ def register_search_tools(
         description=_SEARCH_PAPERS_DESCRIPTION,
     )
     async def search_papers(
+        ctx: Context[Any, Any, Any],
         query: str,
         providers: tuple[ProviderName, ...] = (
             ProviderName.SEMANTIC_SCHOLAR,
@@ -120,19 +126,20 @@ def register_search_tools(
             papers, pagination, provider outcomes, warnings, and failures.
         """
 
-        search_input = SearchPapersInput(
-            query=query,
-            providers=providers,
-            limit=limit,
-            offset=offset,
-            year_from=year_from,
-            year_to=year_to,
-            fields_of_study=fields_of_study,
-            open_access_only=open_access_only,
-            sort=sort,
-        )
+        with correlation_scope(ctx):
+            search_input = SearchPapersInput(
+                query=query,
+                providers=providers,
+                limit=limit,
+                offset=offset,
+                year_from=year_from,
+                year_to=year_to,
+                fields_of_study=fields_of_study,
+                open_access_only=open_access_only,
+                sort=sort,
+            )
 
-        return await execute_search_papers(
-            search_input=search_input,
-            dependencies=dependencies,
-        )
+            return await execute_search_papers(
+                search_input=search_input,
+                dependencies=dependencies,
+            )

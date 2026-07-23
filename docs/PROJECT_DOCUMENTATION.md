@@ -1428,6 +1428,8 @@ src/research_intelligence_mcp/
 ├── domain/
 │   └── Canonical provider-neutral models
 ├── infrastructure/
+│   ├── auth/
+│   │   └── JWT bearer-token verification (streamable-http transport)
 │   ├── cache/
 │   ├── HTTP infrastructure
 │   ├── rate limiting
@@ -1442,6 +1444,7 @@ src/research_intelligence_mcp/
 ├── mcp/
 │   ├── Tool registration
 │   ├── Tool schemas
+│   ├── observability.py (request correlation, caller-context propagation)
 │   └── Dependency composition
 ├── __main__.py
 └── main.py
@@ -1754,7 +1757,7 @@ Examples include:
 
 - Semantic Scholar API keys;
 - future provider credentials;
-- remote transport authentication settings.
+- remote transport authentication settings (`AUTH_JWT_SECRET`).
 
 Requirements:
 
@@ -1903,19 +1906,44 @@ Avoid logging:
 - unnecessarily long user queries;
 - environment-variable dumps.
 
+## Authentication
+
+The server supports two authentication postures, selected through
+configuration (see `docs/research_intelligence_mcp_authentication.md` for
+the full architecture):
+
+- **stdio (default, local):** no authentication. The MCP client launches
+  the process directly, so no network-facing auth surface exists.
+- **streamable-http (remote, e.g. ResearchMind integration):** bearer-JWT
+  verification via `AUTH_ENABLED` and related `AUTH_*` settings. Tokens are
+  verified for signature (JWKS or shared secret), expiry, issuer, and
+  audience; required scopes are enforced by the MCP SDK's own auth
+  middleware. Enabling auth requires no change to `MCP_TRANSPORT=stdio`
+  deployments — the two are independent settings, and `stdio` never routes
+  through the HTTP auth layer regardless of `AUTH_ENABLED`.
+
+This covers Stage 2 of the authentication roadmap. Stage 3 (public OAuth for
+third-party clients) is not implemented.
+
+For a verified walkthrough of configuring and testing Stage 2 locally,
+including a dev token-minting helper (`scripts/generate_dev_token.py`) and
+troubleshooting, see
+`docs/research_intelligence_mcp_authentication_testing.md`.
+
 ## Remote Deployment
 
 Before exposing the MCP server through Streamable HTTP:
 
-1. add authentication;
-2. require HTTPS;
+1. ✅ authentication — service-to-service bearer-JWT verification (`AUTH_*` settings);
+2. require HTTPS (deploy behind a TLS-terminating proxy or load balancer; the
+   application itself does not terminate TLS);
 3. define trusted origins;
-4. implement authorization;
+4. authorization beyond scope checks (per-tool or per-tenant policy);
 5. add request-level rate limiting;
 6. isolate tenants where relevant;
 7. record auditable tool activity;
 8. validate remote transport limits;
-9. configure secret storage;
+9. configure secret storage (e.g. a managed secrets manager rather than `.env` in production);
 10. perform a threat-model review.
 
 ---

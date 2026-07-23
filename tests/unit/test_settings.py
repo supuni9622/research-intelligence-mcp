@@ -120,3 +120,169 @@ def test_get_settings_returns_cached_instance() -> None:
     assert first is second
 
     clear_settings_cache()
+
+
+def test_auth_disabled_by_default() -> None:
+    """Authentication must stay off unless explicitly enabled."""
+
+    settings = Settings(_env_file=None)
+
+    assert settings.auth_enabled is False
+    assert settings.auth_issuer is None
+    assert settings.auth_jwt_algorithms_list() == ["RS256"]
+    assert settings.auth_required_scopes_list() == ["research-intelligence/invoke"]
+
+
+def test_mcp_transport_accepts_streamable_http() -> None:
+    """The streamable-http transport must be a valid configuration."""
+
+    settings = Settings(_env_file=None, MCP_TRANSPORT="streamable-http")
+
+    assert settings.mcp_transport == "streamable-http"
+
+
+def test_auth_requires_issuer_when_enabled() -> None:
+    """Enabling auth without an issuer must fail fast."""
+
+    with pytest.raises(ValidationError, match="AUTH_ISSUER is required"):
+        Settings(
+            _env_file=None,
+            AUTH_ENABLED=True,
+            AUTH_AUDIENCE="research-intelligence-mcp",
+            AUTH_JWT_SECRET="s",
+            AUTH_JWT_ALGORITHMS="HS256",
+        )
+
+
+def test_auth_requires_audience_when_enabled() -> None:
+    """Enabling auth without an audience must fail fast."""
+
+    with pytest.raises(ValidationError, match="AUTH_AUDIENCE is required"):
+        Settings(
+            _env_file=None,
+            AUTH_ENABLED=True,
+            AUTH_ISSUER="https://auth.researchmind.ai",
+            AUTH_JWT_SECRET="s",
+            AUTH_JWT_ALGORITHMS="HS256",
+        )
+
+
+def test_auth_hs256_requires_secret() -> None:
+    """HS256 verification must have a configured shared secret."""
+
+    with pytest.raises(ValidationError, match="AUTH_JWT_SECRET is required"):
+        Settings(
+            _env_file=None,
+            AUTH_ENABLED=True,
+            AUTH_ISSUER="https://auth.researchmind.ai",
+            AUTH_AUDIENCE="research-intelligence-mcp",
+            AUTH_JWT_ALGORITHMS="HS256",
+        )
+
+
+def test_auth_asymmetric_algorithm_requires_jwks_url() -> None:
+    """RS256/ES256/PS256 verification must have a configured JWKS endpoint."""
+
+    with pytest.raises(ValidationError, match="AUTH_JWKS_URL is required"):
+        Settings(
+            _env_file=None,
+            AUTH_ENABLED=True,
+            AUTH_ISSUER="https://auth.researchmind.ai",
+            AUTH_AUDIENCE="research-intelligence-mcp",
+            AUTH_JWT_ALGORITHMS="RS256",
+        )
+
+
+def test_auth_valid_hs256_configuration_is_accepted() -> None:
+    """A complete HS256 configuration should construct without error."""
+
+    settings = Settings(
+        _env_file=None,
+        AUTH_ENABLED=True,
+        AUTH_ISSUER="https://auth.researchmind.ai",
+        AUTH_AUDIENCE="research-intelligence-mcp",
+        AUTH_JWT_ALGORITHMS="HS256",
+        AUTH_JWT_SECRET="a-sufficiently-long-shared-secret",
+    )
+
+    assert settings.auth_enabled is True
+    assert settings.auth_jwt_secret_value() == "a-sufficiently-long-shared-secret"
+
+
+def test_auth_valid_jwks_configuration_is_accepted() -> None:
+    """A complete JWKS-backed configuration should construct without error."""
+
+    settings = Settings(
+        _env_file=None,
+        AUTH_ENABLED=True,
+        AUTH_ISSUER="https://auth.researchmind.ai",
+        AUTH_AUDIENCE="research-intelligence-mcp",
+        AUTH_JWT_ALGORITHMS="RS256",
+        AUTH_JWKS_URL="https://auth.researchmind.ai/.well-known/jwks.json",
+    )
+
+    assert settings.auth_enabled is True
+    assert settings.auth_jwt_secret_value() is None
+
+
+def test_auth_algorithms_can_be_comma_separated() -> None:
+    """List settings should accept comma-separated environment values."""
+
+    settings = Settings(
+        _env_file=None,
+        AUTH_JWT_ALGORITHMS="RS256, ES256",
+        AUTH_REQUIRED_SCOPES=(
+            "research-intelligence/invoke, research-intelligence/search"
+        ),
+    )
+
+    assert settings.auth_jwt_algorithms_list() == ["RS256", "ES256"]
+    assert settings.auth_required_scopes_list() == [
+        "research-intelligence/invoke",
+        "research-intelligence/search",
+    ]
+
+
+def test_env_example_loads_without_error() -> None:
+    """.env.example (the template users copy to .env) must always parse.
+
+    Regression test for a real failure: comma-separated list fields and
+    blank optional URL fields in .env.example previously broke settings
+    loading entirely once a real .env was created from the template.
+    """
+
+    settings = Settings(_env_file=".env.example")
+
+    assert settings.auth_enabled is False
+    assert settings.mcp_transport == "stdio"
+
+
+def test_blank_optional_url_env_vars_are_treated_as_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Empty-string optional URL env vars (as in .env.example) must not fail.
+
+    Regression test: `.env.example` documents AUTH_JWKS_URL and
+    AUTH_RESOURCE_SERVER_URL as present-but-blank by default. Without
+    `env_ignore_empty`, pydantic rejects an empty string as an invalid URL
+    for `HttpUrl | None` fields instead of falling back to `None`.
+    """
+
+    monkeypatch.setenv("AUTH_JWKS_URL", "")
+    monkeypatch.setenv("AUTH_RESOURCE_SERVER_URL", "")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.auth_jwks_url is None
+    assert settings.auth_resource_server_url is None
+
+
+def test_auth_jwt_secret_is_not_exposed_in_repr() -> None:
+    """The shared secret must not leak through the default settings repr."""
+
+    settings = Settings(
+        _env_file=None,
+        AUTH_JWT_SECRET="super-secret-value",
+    )
+
+    assert "super-secret-value" not in repr(settings.auth_jwt_secret)

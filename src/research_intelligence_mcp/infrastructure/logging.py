@@ -2,7 +2,8 @@
 
 import logging
 import sys
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
+from contextlib import contextmanager
 
 import structlog
 from structlog.typing import Processor
@@ -78,3 +79,25 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Return a typed structured logger."""
 
     return structlog.stdlib.get_logger(name)
+
+
+@contextmanager
+def bind_log_context(**fields: str | None) -> Generator[None]:
+    """Bind structured-log fields for the duration of a scope.
+
+    ``None``-valued fields are dropped rather than bound, so callers can pass
+    optional correlation data (for example, an absent request header)
+    without polluting log output with empty fields. Bound values are
+    automatically included in every log call made on this task, including
+    ones made by downstream infrastructure (HTTP clients, providers), via
+    ``structlog.contextvars``.
+    """
+
+    bound_fields = {key: value for key, value in fields.items() if value is not None}
+
+    tokens = structlog.contextvars.bind_contextvars(**bound_fields)
+
+    try:
+        yield
+    finally:
+        structlog.contextvars.reset_contextvars(**tokens)

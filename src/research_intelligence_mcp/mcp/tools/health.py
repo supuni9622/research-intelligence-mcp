@@ -1,14 +1,15 @@
 """Health-check MCP tool."""
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, ConfigDict, Field
 
 from research_intelligence_mcp.config.settings import Settings
 from research_intelligence_mcp.infrastructure.logging import get_logger
 from research_intelligence_mcp.mcp.dependencies import AppDependencies
+from research_intelligence_mcp.mcp.observability import correlation_scope
 
 logger = get_logger(__name__)
 
@@ -81,20 +82,21 @@ def register_health_tools(
             "and return its current runtime metadata."
         ),
     )
-    async def health_check() -> HealthCheckResult:
+    async def health_check(ctx: Context[Any, Any, Any]) -> HealthCheckResult:
         """Return server health and runtime metadata."""
 
-        result = build_health_check_result(
-            settings=dependencies.settings,
-        )
+        with correlation_scope(ctx):
+            result = build_health_check_result(
+                settings=dependencies.settings,
+            )
 
-        logger.info(
-            "health_check_completed",
-            status=result.status,
-            server_name=result.server_name,
-            version=result.version,
-            environment=result.environment,
-            transport=result.transport,
-        )
+            logger.info(
+                "health_check_completed",
+                status=result.status,
+                server_name=result.server_name,
+                version=result.version,
+                environment=result.environment,
+                transport=result.transport,
+            )
 
-        return result
+            return result

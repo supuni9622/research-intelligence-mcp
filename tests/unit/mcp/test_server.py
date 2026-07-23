@@ -46,7 +46,9 @@ class StubProviderRegistry:
         )
 
 
-def build_server_dependencies() -> AppDependencies:
+def build_server_dependencies(
+    settings: Settings | None = None,
+) -> AppDependencies:
     """Build minimal dependencies required during server creation."""
 
     return cast(
@@ -55,7 +57,8 @@ def build_server_dependencies() -> AppDependencies:
             "ServerDependencies",
             (),
             {
-                "settings": Settings(
+                "settings": settings
+                or Settings(
                     _env_file=None,
                     APP_ENVIRONMENT="test",
                 ),
@@ -269,3 +272,57 @@ async def test_resolve_paper_access_has_structured_schema() -> None:
     assert "paper_id" in required_fields
 
     assert access_tool.outputSchema is not None
+
+
+def test_auth_disabled_by_default_leaves_server_unauthenticated() -> None:
+    """Backward compatibility: no auth settings means no token verifier."""
+
+    server = create_mcp_server(build_server_dependencies())
+
+    assert server._token_verifier is None
+    assert server.settings.auth is None
+
+
+def test_auth_enabled_wires_token_verifier_and_required_scopes() -> None:
+    """Enabling auth should attach a token verifier and required scopes."""
+
+    settings = Settings(
+        _env_file=None,
+        APP_ENVIRONMENT="test",
+        AUTH_ENABLED=True,
+        AUTH_ISSUER="https://auth.researchmind.ai",
+        AUTH_AUDIENCE="research-intelligence-mcp",
+        AUTH_JWT_ALGORITHMS="HS256",
+        AUTH_JWT_SECRET="a-sufficiently-long-shared-secret",
+        AUTH_REQUIRED_SCOPES="research-intelligence/invoke",
+    )
+
+    server = create_mcp_server(build_server_dependencies(settings))
+
+    assert server._token_verifier is not None
+    assert server.settings.auth is not None
+    assert server.settings.auth.required_scopes == ["research-intelligence/invoke"]
+    assert str(server.settings.auth.issuer_url) == "https://auth.researchmind.ai/"
+
+
+@pytest.mark.asyncio
+async def test_server_still_registers_tools_when_auth_is_enabled() -> None:
+    """Enabling auth must not affect tool registration."""
+
+    settings = Settings(
+        _env_file=None,
+        APP_ENVIRONMENT="test",
+        AUTH_ENABLED=True,
+        AUTH_ISSUER="https://auth.researchmind.ai",
+        AUTH_AUDIENCE="research-intelligence-mcp",
+        AUTH_JWT_ALGORITHMS="HS256",
+        AUTH_JWT_SECRET="a-sufficiently-long-shared-secret",
+    )
+
+    server = create_mcp_server(build_server_dependencies(settings))
+
+    tools = await server.list_tools()
+    tool_names = {tool.name for tool in tools}
+
+    assert "health_check" in tool_names
+    assert "search_papers" in tool_names
