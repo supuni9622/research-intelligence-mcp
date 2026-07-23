@@ -155,11 +155,15 @@ research-intelligence-mcp/
 │   │   ├── task-definition.json
 │   │   ├── service-connect-example.json
 │   │   └── README.md
+│   ├── observability/
+│   │   ├── prometheus.yml
+│   │   └── grafana/
 │   └── scripts/
 │       ├── smoke_test.py
 │       └── wait_for_ready.py
 ├── Dockerfile
 ├── .dockerignore
+├── docker-compose.yml
 ├── pyproject.toml
 ├── README.md
 └── .env.example
@@ -401,6 +405,50 @@ uv run python deployment/scripts/smoke_test.py --base-url http://127.0.0.1:8000
 `smoke_test.py` checks `/health`, `/ready`, `/metrics`, MCP session
 initialization, tool discovery, and an authenticated `health_check` +
 `search_papers` call. Pass `--auth-token` when `AUTH_ENABLED=true`.
+
+## Local Observability Stack
+
+### Why
+
+`/metrics` alone is just a text snapshot of counters at the instant you
+curl it — it can't tell you if arXiv's error rate spiked five minutes ago,
+whether the cache is actually paying for itself, or whether `search_papers`
+got slower after a change. That requires something to scrape it
+repeatedly, store the history, and let you look at trends instead of one
+number. `docker-compose.yml` runs that: the MCP server, Prometheus, and
+Grafana, wired together.
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL | Role |
+|---|---|---|
+| Prometheus | http://127.0.0.1:9090 | **Collects and stores metrics.** Scrapes `/metrics` every 15s into a time-series database and answers PromQL queries (`rate(mcp_tool_requests_total[1m])`, etc.). Its own UI is functional, not built for dashboards. |
+| Grafana | http://127.0.0.1:3002 | **Visualizes** what Prometheus stored. Has no storage of its own here — it queries Prometheus and renders the results as graphs. Pre-provisioned with a Prometheus datasource and a 10-panel dashboard (**Dashboards → Research Intelligence MCP**, anonymous viewer access, no login needed). |
+| MCP server | http://127.0.0.1:8001 | The app itself, on a remapped host port (`8000` is often already in use — change it in `docker-compose.yml` if `8001` collides too). |
+
+In short: Prometheus is the database that remembers metrics over time;
+Grafana is the window you look through to see them — neither is useful
+here without the other.
+
+### What you can actually do with it
+
+Once traffic flows through (`uv run python deployment/scripts/smoke_test.py --base-url http://127.0.0.1:8001`,
+or just use the server), the dashboard's 10 panels let you:
+
+- **Watch tool usage live** — which of the 7 MCP tools are actually being called, at what rate, and how their p95 latency moves over time (`mcp_tool_requests_total`, `mcp_tool_duration_seconds`).
+- **Catch failures by cause, per tool** — a spike in `mcp_tool_failures_total{error_type="ValidationError"}` vs. `{error_type="ProviderTransportError"}` tells you immediately whether it's bad input or an upstream outage, without grepping logs.
+- **See which provider is the bottleneck or the one failing** — `provider_requests_total` / `provider_failures_total`, broken out by `provider` (Semantic Scholar vs. arXiv) and `operation` (search, get_paper, citations, ...), so you don't have to guess which one is slow or rate-limiting you.
+- **Judge whether caching is worth it** — the cache-hit-ratio panel (`cache_hits_total / (hits + misses)`) shows, per cache (search vs. paper), whether repeat lookups are actually being served from memory.
+- **Spot HTTP-layer load** — request rate by route/status code and in-flight request count, useful for noticing retries, client misbehavior, or load before it becomes a real incident.
+- **Query anything ad hoc in Prometheus directly** (http://127.0.0.1:9090/graph) — the dashboard only covers the panels we pre-built; any of the metric names above can be queried and graphed on the fly with PromQL for a question the dashboard doesn't answer.
+
+This stack is for local development only — it is not deployed as part of
+the ECS setup above (nothing collects these metrics in production yet; see
+the "remaining manual tasks" in the deployment guide). See
+`docs/research_intelligence_mcp_deployment_guide.md` §8 for teardown and
+more detail.
 
 ---
 
