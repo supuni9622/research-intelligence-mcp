@@ -1,0 +1,46 @@
+# Local observability stack: the MCP server (streamable-http) + Prometheus
+# (scraping /metrics) + Grafana (pre-provisioned dashboard reading from
+# Prometheus). See docs/research_intelligence_mcp_deployment_guide.md
+# "Local Observability Stack" for usage.
+#
+# Not used for production deployment — see deployment/ecs/ for that.
+
+services:
+  mcp:
+    build: .
+    image: research-intelligence-mcp:local
+    ports:
+      - "8001:8000"
+    environment:
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8000"
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      APP_ENVIRONMENT: development
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - mcp
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./deployment/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deployment/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped

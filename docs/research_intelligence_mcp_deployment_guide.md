@@ -168,7 +168,49 @@ failing step named — safe to gate a CI/CD pipeline on.
 
 ---
 
-## 8. Remaining manual tasks
+## 8. Local observability stack (Prometheus + Grafana)
+
+`/metrics` alone is just a snapshot — nothing collects its history or
+visualizes it without a scraper. `docker-compose.yml` runs one: the MCP
+server (`streamable-http`), Prometheus (scraping `/metrics` every 15s), and
+Grafana (pre-provisioned with a Prometheus datasource and a starter
+dashboard), all wired together on one Docker network.
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL | Notes |
+|---|---|---|
+| MCP server | http://127.0.0.1:8001/mcp (health: `:8001/health`) | Host port `8001` — change the `mcp` service's port mapping in `docker-compose.yml` if it collides with something else on your machine. |
+| Prometheus | http://127.0.0.1:9090 | Query `/api/v1/targets` to confirm the `research-intelligence-mcp` job is `up`. |
+| Grafana | http://127.0.0.1:3002 | Anonymous viewer access enabled — no login needed. Open **Dashboards → Research Intelligence MCP**. |
+
+The dashboard (`deployment/observability/grafana/dashboards/research-intelligence-mcp.json`)
+has 10 panels: MCP tool call rate/duration/failures, provider request
+rate/duration/failures, cache hit ratio/current entries, and HTTP request
+rate/in-flight. Panels stay flat until the server actually receives traffic
+— generate some with the smoke test:
+
+```bash
+uv run python deployment/scripts/smoke_test.py --base-url http://127.0.0.1:8001
+```
+
+Tear down:
+
+```bash
+docker compose down        # keep Grafana/Prometheus data (named volumes not used here, so this also clears it)
+```
+
+This stack is for local development and demos only — it does not represent
+production observability. In ECS, `/metrics` would instead be scraped by
+whatever your organization already runs (CloudWatch Container Insights,
+Amazon Managed Prometheus, self-hosted Prometheus, etc.); nothing like that
+has been provisioned (see §9 below).
+
+---
+
+## 9. Remaining manual tasks
 
 Everything below requires an AWS account and was intentionally **not**
 performed as part of implementing this guide — these are the concrete next
@@ -185,11 +227,12 @@ steps for whoever owns the AWS environment:
 - [ ] Run the Level 2 smoke test from a task inside the same VPC.
 - [ ] Hand off the MCP base URL, Service Connect discovery name, JWT issuer/audience/scope, and JWKS URL to the ResearchMind team (see "Cross-Repository Handoff" in `docs/remote_mcp_deployment_prd.md`).
 - [ ] Once ResearchMind is also deployed, run the Level 3 end-to-end smoke test.
+- [ ] Provision production-grade metrics/log collection (CloudWatch Container Insights, Amazon Managed Prometheus, or self-hosted) and point it at `/metrics` and the `awslogs` CloudWatch log group — the local Prometheus/Grafana stack in §8 is dev-only and does not run in ECS.
 - [ ] Optional hardening: add HTTP response-header echo for `X-Request-ID`/`X-Correlation-ID` (currently log-bound only — see Phase 7B "Known limitations" in the roadmap) and `provider_rate_limits_total` / `provider_retries_total` metrics.
 
 ---
 
-## 9. Related documents
+## 10. Related documents
 
 - [`docs/remote_mcp_deployment_prd.md`](remote_mcp_deployment_prd.md) — original requirements this implementation follows.
 - [`docs/research_intelligence_mcp_deployment.md`](research_intelligence_mcp_deployment.md) — architecture and long-term deployment vision.
@@ -197,3 +240,4 @@ steps for whoever owns the AWS environment:
 - [`docs/research_intelligence_mcp_authentication.md`](research_intelligence_mcp_authentication.md) / [`_authentication_testing.md`](research_intelligence_mcp_authentication_testing.md) — JWT auth architecture and a verified local walkthrough.
 - [`docs/research_intelligence_mcp_client_setup.md`](research_intelligence_mcp_client_setup.md) — connecting Claude Desktop, Cursor, MCP Inspector, and streamable-http clients.
 - [`deployment/ecs/README.md`](../deployment/ecs/README.md) — ECS templates, security groups, deploy/rollback commands.
+- [`docker-compose.yml`](../docker-compose.yml) / [`deployment/observability/`](../deployment/observability/) — local Prometheus + Grafana stack (§8).

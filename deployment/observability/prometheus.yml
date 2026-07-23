@@ -1,0 +1,13 @@
+# Local Prometheus config for the docker-compose observability stack
+# (`docker-compose.observability.yml`). Scrapes the MCP server's own
+# /metrics endpoint — see infrastructure/observability/metrics.py.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: research-intelligence-mcp
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["mcp:8000"]
